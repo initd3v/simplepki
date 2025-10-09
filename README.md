@@ -137,11 +137,27 @@ export PKI_SCRIPT_OUTPUT=1
 
 #### Syntax Examples
 
-* pki.sh ca_create "PKI_CA_OUTPUT_PATH=/tmp/ca:::PKI_CA_NAME=test:::PKI_CA_ROOT=1:::PKI_CA_BASE_URI=http://pki.test:::PKI_CA_POLICY=1.1.1.1:::PKI_CA_CERT_POLICY=1.1.1.1.2:::PKI_KEY_ALGORITHM=ed25519:::PKI_KEY_PASSWORD=Test1234:::PKI_REQ_HASH=sha512:::PKI_REQ_COUNTRY=US:::PKI_REQ_STATE=California:::PKI_REQ_LOCATION=LA:::PKI_REQ_ORGANIZATION=Test:::PKI_REQ_ORGANIZATIONUNIT=TestSub:::PKI_REQ_COMMONNAME=Test CA:::PKI_REQ_EXTENDED_KEY_USAGE=critical, serverAuth, clientAuth, OCSPSigning:::PKI_CERT_DURATION=10 years"
-* pki.sh key_create "PKI_KEY_OUTPUT_FILE=/tmp/test.key:::PKI_KEY_ALGORITHM=rsa:::PKI_KEY_ENCRYPTION=rsa4096:::PKI_KEY_PASSWORD=Test1234"
-* pki.sh req_create "PKI_REQ_OUTPUT_FILE=/tmp/test.req:::PKI_KEY_INPUT_FILE=/tmp/test.key:::PKI_KEY_INPUT_PASSWORD=Test1234:::PKI_REQ_HASH=sha256:::PKI_REQ_COUNTRY=US:::PKI_REQ_STATE=California:::PKI_REQ_LOCATION=LA:::PKI_REQ_ORGANIZATION=Test:::PKI_REQ_ORGANIZATIONUNIT=TestSub:::PKI_REQ_COMMONNAME=test.cert:::PKI_REQ_EXTENDED_KEY_USAGE=critical, serverAuth:::PKI_REQ_ALTERNATE_NAME=DNS.1:test.cert"
-* pki.sh cert_create "PKI_CERT_OUTPUT_FILE=/tmp/ca/testsub/public/testsub.cer:::PKI_CERT_DURATION=10 years:::PKI_REQ_INPUT_FILE=/tmp/ca/testsub/.private/testsub.req:::PKI_KEY_INPUT_FILE=/tmp/ca/test/.private/test.key:::PKI_KEY_INPUT_PASSWORD=Test1234:::PKI_CA_CONF_FILE=/tmp/ca/test/.private/test.conf:::PKI_CA_EXTENSION=v3_intermediate_ca"
-* pki.sh cert_revoke "PKI_CERT_SERIAL=111111111111111111111111111111111:::PKI_KEY_INPUT_FILE=/tmp/ca/testsub/.private/testsub.key:::PKI_KEY_INPUT_PASSWORD=Test1234:::PKI_CA_CONF_FILE=/tmp/ca/testsub/.private/testsub.conf:::PKI_CERT_REVOKE_REASON=superseded"
-* pki.sh crl_create "PKI_CRL_OUTPUT_FILE=/tmp/ca/testsub/signing/crls/testsub.crl:::PKI_KEY_INPUT_FILE=/tmp/ca/testsub/.private/testsub.key:::PKI_KEY_INPUT_PASSWORD=Test1234:::PKI_CA_CONF_FILE=/tmp/ca/testsub/.private/testsub.conf:::PKI_CRL_DURATION=7 days"
-* pki.sh crl_buffer "PKI_CRL_OUTPUT_PATH=/tmp:::PKI_CRL_INPUT_FILE=/tmp/ca/testsub/signing/crls/testsub.crl"
-* pki.sh overview_create "PKI_CA_OVERVIEW_INPUT_CONF_FILE=/tmp/ca/test/.private/test.conf, /tmp/ca/testsub/.private/testsub.conf:::PKI_CA_OVERVIEW_OUTPUT_PATH=/tmp"
+```
+pki.sh ca_create "PKI_CA_OUTPUT_PATH=/tmp/ca:::PKI_CA_NAME=test:::PKI_CA_ROOT=1:::PKI_CA_BASE_URI=http://pki.test:::PKI_CA_POLICY=1.1.1.1:::PKI_CA_CERT_POLICY=1.1.1.1.2:::PKI_KEY_ALGORITHM=ed25519:::PKI_KEY_PASSWORD=Test1234:::PKI_REQ_HASH=sha512:::PKI_REQ_COUNTRY=US:::PKI_REQ_STATE=California:::PKI_REQ_LOCATION=LA:::PKI_REQ_ORGANIZATION=Test:::PKI_REQ_ORGANIZATIONUNIT=TestSub:::PKI_REQ_COMMONNAME=Test CA:::PKI_REQ_EXTENDED_KEY_USAGE=critical, serverAuth, clientAuth, OCSPSigning:::PKI_CERT_DURATION=10 years"
+```
+```
+pki.sh key_create "PKI_KEY_OUTPUT_FILE=/tmp/test.key:::PKI_KEY_ALGORITHM=rsa:::PKI_KEY_ENCRYPTION=rsa4096:::PKI_KEY_PASSWORD=Test1234"
+```
+```
+pki.sh req_create "PKI_REQ_OUTPUT_FILE=/tmp/test.req:::PKI_KEY_INPUT_FILE=/tmp/test.key:::PKI_KEY_INPUT_PASSWORD=Test1234:::PKI_REQ_HASH=sha256:::PKI_REQ_COUNTRY=US:::PKI_REQ_STATE=California:::PKI_REQ_LOCATION=LA:::PKI_REQ_ORGANIZATION=Test:::PKI_REQ_ORGANIZATIONUNIT=TestSub:::PKI_REQ_COMMONNAME=test.cert:::PKI_REQ_EXTENDED_KEY_USAGE=critical, serverAuth:::PKI_REQ_ALTERNATE_NAME=DNS.1:test.cert"
+```
+```
+pki.sh cert_create "PKI_CERT_OUTPUT_FILE=/tmp/ca/testsub/public/testsub.cer:::PKI_CERT_DURATION=10 years:::PKI_REQ_INPUT_FILE=/tmp/ca/testsub/.private/testsub.req:::PKI_KEY_INPUT_FILE=/tmp/ca/test/.private/test.key:::PKI_KEY_INPUT_PASSWORD=Test1234:::PKI_CA_CONF_FILE=/tmp/ca/test/.private/test.conf:::PKI_CA_EXTENSION=v3_intermediate_ca"
+```
+```
+pki.sh cert_revoke "PKI_CERT_SERIAL=111111111111111111111111111111111:::PKI_KEY_INPUT_FILE=/tmp/ca/testsub/.private/testsub.key:::PKI_KEY_INPUT_PASSWORD=Test1234:::PKI_CA_CONF_FILE=/tmp/ca/testsub/.private/testsub.conf:::PKI_CERT_REVOKE_REASON=superseded"
+```
+```
+pki.sh crl_create "PKI_CRL_OUTPUT_FILE=/tmp/ca/testsub/signing/crls/testsub.crl:::PKI_KEY_INPUT_FILE=/tmp/ca/testsub/.private/testsub.key:::PKI_KEY_INPUT_PASSWORD=Test1234:::PKI_CA_CONF_FILE=/tmp/ca/testsub/.private/testsub.conf:::PKI_CRL_DURATION=7 days"
+```
+```
+pki.sh crl_buffer "PKI_CRL_OUTPUT_PATH=/tmp:::PKI_CRL_INPUT_FILE=/tmp/ca/testsub/signing/crls/testsub.crl"
+```
+```
+pki.sh overview_create "PKI_CA_OVERVIEW_INPUT_CONF_FILE=/tmp/ca/test/.private/test.conf, /tmp/ca/testsub/.private/testsub.conf:::PKI_CA_OVERVIEW_OUTPUT_PATH=/tmp"
+```
