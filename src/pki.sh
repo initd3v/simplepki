@@ -314,6 +314,17 @@ function f_parameter_verify() {
                 fi
             fi
             ;;
+        "PKI_REQ_KEY_USAGE")
+            TMP_IFS=${IFS}
+            IFS=', '
+            for i in ${2} ; do
+                if [[ ! "${i}" =~ ^(critical|digitalSignature|nonRepudiation|keyEncipherment|dataEncipherment|keyAgreement|keyCertSign|cRLSign|encipherOnly|decipherOnly)$ ]] ; then
+                    ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The passed extended key usage value '${i}' in variable 'PKI_REQ_EXTENDED_KEY_USAGE' seems not to be a valid value. Please ensure you use 'critical', 'serverAuth', 'clientAuth', 'codeSigning', 'emailProtection', 'timeStamping', 'OCSPSigning', 'ipsecIKE', 'msCodeInd', 'msCodeCom', 'msCTLSign'or 'msEFS' divided by ', ' for multiple values.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
+                exit ${TMP_FALSE}
+                fi
+            done
+            IFS=${TMP_IFS}
+            ;;
         "PKI_REQ_EXTENDED_KEY_USAGE")
             TMP_IFS=${IFS}
             IFS=', '
@@ -470,7 +481,7 @@ function f_parameter_verify() {
             fi
 
             # check for a valid request file
-            ${CMD_OPENSSL} crl -in "${2}" -text -nout >/dev/null 2>&1
+            ${CMD_OPENSSL} crl -in "${2}" -text -noout >/dev/null 2>&1
             if [ $? -eq ${TMP_TRUE} ] ; then
                 ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The passed CRL input file '${2}' in variable 'PKI_CRL_INPUT_FILE' seems not to be a valid CRL file.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
                 exit ${TMP_FALSE}
@@ -495,6 +506,19 @@ function f_parameter_verify() {
 
             if [ ! -w "${2}" ] ; then
                 ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The passed overview HTML page output path '${2}' in variable 'PKI_CA_OVERVIEW_OUTPUT_PATH' is not writable for the executing user. Please ensure that the user '${TMP_USER}' has write permission on folder '${PKI_CRL_OUTPUT_PATH}'.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
+                exit ${TMP_FALSE}
+            fi
+            ;;
+        "PKI_CERT_INPUT_FILE")
+            if [ ! -f "${2}" ] || [ ! -r "${2}" ] ; then
+                ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The passed cert input file '${2}' in variable 'PKI_CERT_INPUT_FILE' must be an existent and by the current user readable regular file.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
+                exit ${TMP_FALSE}
+            fi
+
+            # check for a valid certificate file
+            ${CMD_OPENSSL} x509 -in "${2}" -text -noout >/dev/null 2>&1
+            if [ $? -ne ${TMP_TRUE} ] ; then
+                ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The passed cert input file '${2}' in variable 'PKI_CERT_INPUT_FILE' seems not to be a valid certificate file.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
                 exit ${TMP_FALSE}
             fi
             ;;
@@ -632,8 +656,8 @@ function f_req_set() {
         exit ${TMP_FALSE}
     fi
     
-    if [ "${PKI_REQ_EXTENDED_KEY_USAGE}x" == "x" ] ; then
-        ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The variable 'PKI_PKI_REQ_EXTENDED_KEY_USAGE' must be set with a valid extended key usage value ('critical', 'serverAuth', 'clientAuth', 'codeSigning', 'emailProtection', 'timeStamping', 'OCSPSigning', 'ipsecIKE', 'msCodeInd', 'msCodeCom', 'msCTLSign'or 'msEFS' divided by ', ' for multiple values).]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
+    if [ "${PKI_REQ_KEY_USAGE}x" == "x" ] ; then
+        ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The variable 'PKI_REQ_KEY_USAGE' must be set with a valid key usage value ('critical', 'digitalSignature', 'nonRepudiation', 'keyEncipherment', 'dataEncipherment', 'keyAgreement', 'keyCertSign', 'cRLSign', 'encipherOnly', 'decipherOnly' divided by ', ' for multiple values).]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
         exit ${TMP_FALSE}
     fi
     
@@ -666,8 +690,10 @@ function f_req_set() {
     else
         ${CMD_ECHO} "basicConstraints=critical,CA:false,pathlen:${PKI_CA_PATHLENGTH}" >> "${PKI_REQ_OUTPUT_FILE}.conf"
     fi
-    ${CMD_ECHO} "keyUsage=critical,nonRepudiation,digitalSignature,keyEncipherment" >> "${PKI_REQ_OUTPUT_FILE}.conf"
-    ${CMD_ECHO} "extendedKeyUsage=${PKI_REQ_EXTENDED_KEY_USAGE}" >> "${PKI_REQ_OUTPUT_FILE}.conf"
+    ${CMD_ECHO} "keyUsage=${PKI_REQ_KEY_USAGE}" >> "${PKI_REQ_OUTPUT_FILE}.conf"
+    if [ "${PKI_REQ_EXTENDED_KEY_USAGE}x" != "x" ] ; then
+        ${CMD_ECHO} "extendedKeyUsage=${PKI_REQ_EXTENDED_KEY_USAGE}" >> "${PKI_REQ_OUTPUT_FILE}.conf"
+    fi
     ${CMD_ECHO} "[subject_alt_name]" >> "${PKI_REQ_OUTPUT_FILE}.conf"
     if [ "${PKI_CA_ROOT}x" == "x" ] ; then
         TMP_IFS=${IFS}
@@ -1149,13 +1175,13 @@ function f_crl_set() {
         exit ${TMP_FALSE}
     fi
 
-    if [ "${PKI_KEY_INPUT_FILE}x" == "x" ] ; then
-        ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The variable 'PKI_KEY_INPUT_FILE' must be set with a valid private key input path for the CA.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
+    if ( [ "${PKI_KEY_INPUT_FILE}x" != "x" ] && [ "${PKI_CERT_INPUT_FILE}x" == "x" ] ) || ( [ "${PKI_KEY_INPUT_FILE}x" == "x" ] && [ "${PKI_CERT_INPUT_FILE}x" != "x" ] ) ; then
+        ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The variable 'PKI_CERT_INPUT_FILE' and 'PKI_KEY_INPUT_FILE' need to be specified together. If not specified, the CA configuration private key and certificate will be used.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
         exit ${TMP_FALSE}
     fi
 
     if [ "${PKI_KEY_INPUT_PASSWORD}x" == "x" ] ; then
-        ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The variable 'PKI_KEY_INPUT_PASSWORD' must be set with the valid password for the CA private key '${PKI_KEY_INPUT_FILE}'.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
+        ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The variable 'PKI_KEY_INPUT_PASSWORD' must be set with the valid password for the signing private key.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
         exit ${TMP_FALSE}
     fi
 
@@ -1182,9 +1208,17 @@ function f_crl_set() {
             exit ${TMP_FALSE}
         fi
 
-        ${CMD_OPENSSL} ca -config "${PKI_CA_CONF_FILE}" -keyfile "${PKI_KEY_INPUT_FILE}" -passin pass:"${PKI_KEY_INPUT_PASSWORD}" -rand_serial -rand "/tmp/${TMP_TIME}_RANDFILE" -crl_lastupdate "${TMP_CRL_STARTDATE}" -crl_nextupdate "${TMP_CRL_ENDDATE}" -gencrl -out "${PKI_CRL_OUTPUT_FILE}" 2>/dev/null
+        if [ "${PKI_KEY_INPUT_FILE}x" != "x" ] && [ "${PKI_CERT_INPUT_FILE}x" != "x" ] ; then
+            ${CMD_OPENSSL} ca -config "${PKI_CA_CONF_FILE}" -keyfile "${PKI_KEY_INPUT_FILE}" -cert "${PKI_CERT_INPUT_FILE}" -passin pass:"${PKI_KEY_INPUT_PASSWORD}" -rand_serial -rand "/tmp/${TMP_TIME}_RANDFILE" -crl_lastupdate "${TMP_CRL_STARTDATE}" -crl_nextupdate "${TMP_CRL_ENDDATE}" -gencrl -out "${PKI_CRL_OUTPUT_FILE}" 2>/dev/null
+        else
+            ${CMD_OPENSSL} ca -config "${PKI_CA_CONF_FILE}" -passin pass:"${PKI_KEY_INPUT_PASSWORD}" -rand_serial -rand "/tmp/${TMP_TIME}_RANDFILE" -crl_lastupdate "${TMP_CRL_STARTDATE}" -crl_nextupdate "${TMP_CRL_ENDDATE}" -gencrl -out "${PKI_CRL_OUTPUT_FILE}" 2>/dev/null
+        fi
     else
-        ${CMD_OPENSSL} ca -config "${PKI_CA_CONF_FILE}" -keyfile "${PKI_KEY_INPUT_FILE}" -passin pass:"${PKI_KEY_INPUT_PASSWORD}" -rand_serial -rand "/tmp/${TMP_TIME}_RANDFILE" -gencrl -out "${PKI_CRL_OUTPUT_FILE}" 2>/dev/null
+        if [ "${PKI_KEY_INPUT_FILE}x" != "x" ] && [ "${PKI_CERT_INPUT_FILE}x" != "x" ] ; then
+            ${CMD_OPENSSL} ca -config "${PKI_CA_CONF_FILE}" -keyfile "${PKI_KEY_INPUT_FILE}" -cert "${PKI_CERT_INPUT_FILE}" -passin pass:"${PKI_KEY_INPUT_PASSWORD}" -rand_serial -rand "/tmp/${TMP_TIME}_RANDFILE" -gencrl -out "${PKI_CRL_OUTPUT_FILE}" 2>/dev/null
+        else
+            ${CMD_OPENSSL} ca -config "${PKI_CA_CONF_FILE}" -passin pass:"${PKI_KEY_INPUT_PASSWORD}" -rand_serial -rand "/tmp/${TMP_TIME}_RANDFILE" -gencrl -out "${PKI_CRL_OUTPUT_FILE}" 2>/dev/null
+        fi
     fi
 
     if [ $? -eq ${TMP_TRUE} ] && [ -f "${PKI_CRL_OUTPUT_FILE}" ] ; then

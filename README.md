@@ -95,7 +95,8 @@ export PKI_SCRIPT_OUTPUT=1
 |                       | PKI_REQ_ORGANIZATION                  | necessary     | Organization name for the request subject consisting of 2 up to 32 letters, numbers, '-' or '.'.                                      |
 |                       | PKI_REQ_ORGANIZATIONUNIT              | necessary     | Organization unit name for the request subject consisting of 2 up to 32 letters, numbers, '-' or '.'.                                 |
 |                       | PKI_REQ_COMMONNAME                    | necessary     | Common name for the request subject consisting of 2 up to 32 letters, numbers, '@', '.' or ' '.                                       |
-|                       | PKI_REQ_EXTENDED_KEY_USAGE            | necessary     | The extended key usage for the request (e.g. critical, serverAuth, clientAuth, codeSigning, emailProtection, OCSPSigning)             |
+|                       | PKI_REQ_EXTENDED_KEY_USAGE            | optional      | The extended key usage for the request (e.g. critical, serverAuth, clientAuth, codeSigning, emailProtection, OCSPSigning)             |
+|                       | PKI_REQ_KEY_USAGE                     | necessary     | The extended key usage for the request (e.g. critical, serverAuth, clientAuth, codeSigning, emailProtection, OCSPSigning)             |
 |                       | PKI_CERT_DURATION                     | necessary     | The duration of the certificate signing in valid format (1 up to 369 days / 1 up to 59 weeks / 1 up to 12 months / 1 up to 10 years). |
 | key_create            | PKI_KEY_OUTPUT_FILE                   | necessary     | Full filepath of the key file to write.                                                                                               |
 |                       | PKI_KEY_ALGORITHM                     | necessary     | Encryption algorithm 'ec', 'rsa' or 'ed25519'.                                                                                        |
@@ -111,7 +112,8 @@ export PKI_SCRIPT_OUTPUT=1
 |                       | PKI_REQ_ORGANIZATION                  | necessary     | Organization name for the request subject consisting of 2 up to 32 letters, numbers, '-' or '.'.                                      |
 |                       | PKI_REQ_ORGANIZATIONUNIT              | necessary     | Organization unit name for the request subject consisting of 2 up to 32 letters, numbers, '-' or '.'.                                 |
 |                       | PKI_REQ_COMMONNAME                    | necessary     | Common name for the request subject consisting of 2 up to 32 letters, numbers, '@', '.' or ' '.                                       |
-|                       | PKI_REQ_EXTENDED_KEY_USAGE            | necessary     | The extended key usage for the request (e.g. critical, serverAuth, clientAuth, codeSigning, emailProtection, OCSPSigning)             |
+|                       | PKI_REQ_EXTENDED_KEY_USAGE            | optional      | The extended key usage for the request (e.g. critical, serverAuth, clientAuth, codeSigning, emailProtection, OCSPSigning)             |
+|                       | PKI_REQ_KEY_USAGE                     | necessar      | The extended key usage for the request (e.g. critical, serverAuth, clientAuth, codeSigning, emailProtection, OCSPSigning)             |
 | cert_create           | PKI_CERT_OUTPUT_FILE                  | necessary     | Full filepath of the certificate file to write.                                                                                       |
 |                       | PKI_CERT_DURATION                     | necessary     | The duration of the certificate signing in valid format (1 up to 369 days / 1 up to 59 weeks / 1 up to 12 months / 1 up to 10 years). |
 |                       | PKI_REQ_INPUT_FILE                    | necessary     | Request filepath which needs to be signed.                                                                                            |
@@ -125,7 +127,8 @@ export PKI_SCRIPT_OUTPUT=1
 |                       | PKI_CA_CONF_FILE                      | necessary     | Full filepath of the configuration file to read.                                                                                      |
 |                       | PKI_CERT_REVOKE_REASON                | necessary     | Revoke reason of the certificate (e.g. keyCompromise, CACompromise, superseded).                                                      |
 | crl_create            | PKI_CRL_OUTPUT_FILE                   | necessary     | Full filepath of the CRL file to write.                                                                                               |
-|                       | PKI_KEY_INPUT_FILE                    | necessary     | Private key filepath.                                                                                                                 |
+|                       | PKI_KEY_INPUT_FILE                    | optional      | Private key filepath. Needs to be specified when 'PKI_CERT_INPUT_FILE' is used. Otherwise the CA configuration entries are used.      |
+|                       | PKI_CERT_INPUT_FILE                   | optional      | Certificate filepath. Needs to be specified when 'PKI_CERT_INPUT_FILE' is used. Otherwise the CA configuration entries are used.      |
 |                       | PKI_KEY_INPUT_PASSWORD                | necessary     | Private key encryption password.                                                                                                      |
 |                       | PKI_CA_CONF_FILE                      | necessary     | Full filepath of the configuration file to read.                                                                                      |
 |                       | PKI_CRL_DURATION                      | optional      | The duration of the CRL in valid format (1 up to 369 days / 1 up to 59 weeks / 1 up to 12 months / 1 up to 10 years).                 |
@@ -144,7 +147,7 @@ pki.sh ca_create "PKI_CA_OUTPUT_PATH=/tmp/ca:::PKI_CA_NAME=test:::PKI_CA_ROOT=1:
 pki.sh key_create "PKI_KEY_OUTPUT_FILE=/tmp/test.key:::PKI_KEY_ALGORITHM=rsa:::PKI_KEY_ENCRYPTION=rsa4096:::PKI_KEY_PASSWORD=Test1234"
 ```
 ```
-pki.sh req_create "PKI_REQ_OUTPUT_FILE=/tmp/test.req:::PKI_KEY_INPUT_FILE=/tmp/test.key:::PKI_KEY_INPUT_PASSWORD=Test1234:::PKI_REQ_HASH=sha256:::PKI_REQ_COUNTRY=US:::PKI_REQ_STATE=California:::PKI_REQ_LOCATION=LA:::PKI_REQ_ORGANIZATION=Test:::PKI_REQ_ORGANIZATIONUNIT=TestSub:::PKI_REQ_COMMONNAME=test.cert:::PKI_REQ_EXTENDED_KEY_USAGE=critical, serverAuth:::PKI_REQ_ALTERNATE_NAME=DNS.1:test.cert"
+pki.sh req_create "PKI_REQ_OUTPUT_FILE=/tmp/test.req:::PKI_KEY_INPUT_FILE=/tmp/test.key:::PKI_KEY_INPUT_PASSWORD=Test1234:::PKI_REQ_HASH=sha256:::PKI_REQ_COUNTRY=US:::PKI_REQ_STATE=California:::PKI_REQ_LOCATION=LA:::PKI_REQ_ORGANIZATION=Test:::PKI_REQ_ORGANIZATIONUNIT=TestSub:::PKI_REQ_COMMONNAME=test.cert:::PKI_REQ_KEY_USAGE=critical, digitalSignature, cRLSign, keyCertSign:::PKI_REQ_ALTERNATE_NAME=IP.1:127.0.0.1"
 ```
 ```
 pki.sh cert_create "PKI_CERT_OUTPUT_FILE=/tmp/ca/testsub/public/testsub.cer:::PKI_CERT_DURATION=10 years:::PKI_REQ_INPUT_FILE=/tmp/ca/testsub/.private/testsub.req:::PKI_KEY_INPUT_FILE=/tmp/ca/test/.private/test.key:::PKI_KEY_INPUT_PASSWORD=Test1234:::PKI_CA_CONF_FILE=/tmp/ca/test/.private/test.conf:::PKI_CA_EXTENSION=v3_intermediate_ca"
