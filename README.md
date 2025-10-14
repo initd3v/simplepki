@@ -128,7 +128,7 @@ export PKI_SCRIPT_OUTPUT=1
 |                       | PKI_CERT_REVOKE_REASON                | necessary     | Revoke reason of the certificate (e.g. keyCompromise, CACompromise, superseded).                                                      |
 | crl_create            | PKI_CRL_OUTPUT_FILE                   | necessary     | Full filepath of the CRL file to write.                                                                                               |
 |                       | PKI_KEY_INPUT_FILE                    | optional      | Private key filepath. Needs to be specified when 'PKI_CERT_INPUT_FILE' is used. Otherwise the CA configuration entries are used.      |
-|                       | PKI_CERT_INPUT_FILE                   | optional      | Certificate filepath. Needs to be specified when 'PKI_CERT_INPUT_FILE' is used. Otherwise the CA configuration entries are used.      |
+|                       | PKI_CERT_INPUT_FILE                   | optional      | Certificate filepath. Needs to be specified when 'PKI_KEY_INPUT_FILE' is used. Otherwise the CA configuration entries are used.       |
 |                       | PKI_KEY_INPUT_PASSWORD                | necessary     | Encryption password of the key. Can be plaintext input or a path to an one-line file containing the password.                         |
 |                       | PKI_CA_CONF_FILE                      | necessary     | Full filepath of the configuration file to read.                                                                                      |
 |                       | PKI_CRL_DURATION                      | optional      | The duration of the CRL in valid format (1 up to 369 days / 1 up to 59 weeks / 1 up to 12 months / 1 up to 10 years).                 |
@@ -136,6 +136,9 @@ export PKI_SCRIPT_OUTPUT=1
 |                       | PKI_CRL_INPUT_FILE                    | necessary     | Full filepath of the CRL input file to read.                                                                                          |
 | overview_create       | PKI_CA_OVERVIEW_INPUT_CONF_FILE       | necessary     | Full filepath of the CA configuration file to read. Multiple entries are separated by ', '.                                           |
 |                       | PKI_CA_OVERVIEW_OUTPUT_PATH           | necessary     | Output path of the 'pki.html' file which must be readable / writable by executing user.                                               |
+| pkcs12_create         | PKI_CERT_INPUT_FILE                   | optional      | Certificate filepath.                                                                                                                 |
+|                       | PKI_KEY_INPUT_FILE                    | necessary     | Private key filepath.                                                                                                                 |
+|                       | PKI_KEY_INPUT_PASSWORD                | necessary     | Encryption password of the key. Can be plaintext input or a path to an one-line file containing the password.                         |
 
 
 #### Syntax Examples
@@ -163,4 +166,7 @@ pki.sh crl_buffer "PKI_CRL_OUTPUT_PATH=/tmp:::PKI_CRL_INPUT_FILE=/tmp/ca/testsub
 ```
 ```
 pki.sh overview_create "PKI_CA_OVERVIEW_INPUT_CONF_FILE=/tmp/ca/test/.private/test.conf, /tmp/ca/testsub/.private/testsub.conf:::PKI_CA_OVERVIEW_OUTPUT_PATH=/tmp"
+```
+```
+pki.sh pkcs12_create "PKI_KEY_INPUT_FILE=/tmp/ca/testsub/.private/testsub.key:::PKI_KEY_INPUT_PASSWORD=Test1234:::PKI_CERT_INPUT_FILE=/tmp/ca/testsub/public/testsub.cer"
 ```

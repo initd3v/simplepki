@@ -531,6 +531,12 @@ function f_parameter_verify() {
                 exit ${TMP_FALSE}
             fi
             ;;
+        "PKI_CRL_OUTPUT_FORMAT")
+            if [[ ! "${2}" =~ ^(PEM|DER)$ ]] ; then
+                ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The variable 'PKI_CRL_OUTPUT_FORMAT' with value '${2}' must be set either with the valid output form 'PEM' or 'DER'.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
+                exit ${TMP_FALSE}
+            fi
+            ;;
         *)
             ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The passed parameter '${1}' with value '${2}' is not a valid one.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
             exit ${TMP_FALSE} 
@@ -1204,6 +1210,8 @@ function f_crl_set() {
         exit ${TMP_FALSE}
     fi
 
+    PKI_CRL_OUTPUT_FORMAT="${PKI_CRL_OUTPUT_FORMAT:-pem}"
+
     TMP_TIME=$( ${CMD_DATE} -d 'now' -u +"%Y%m%d%H%M%SZ" )
     ${CMD_DD} if=/dev/urandom bs=1k count=512 of="/tmp/${TMP_TIME}_RANDFILE" 2>/dev/null
 
@@ -1223,7 +1231,7 @@ function f_crl_set() {
         fi
 
         if [ "${PKI_KEY_INPUT_FILE}x" != "x" ] && [ "${PKI_CERT_INPUT_FILE}x" != "x" ] ; then
-            ${CMD_OPENSSL} ca -config "${PKI_CA_CONF_FILE}" -keyfile "${PKI_KEY_INPUT_FILE}" -cert "${PKI_CERT_INPUT_FILE}" -passin "${PKI_KEY_INPUT_PASSWORD_PREFIX}":"${PKI_KEY_INPUT_PASSWORD}" -rand_serial -rand "/tmp/${TMP_TIME}_RANDFILE" -crl_lastupdate "${TMP_CRL_STARTDATE}" -crl_nextupdate "${TMP_CRL_ENDDATE}" -gencrl -out "${PKI_CRL_OUTPUT_FILE}" 2>/dev/null
+            ${CMD_OPENSSL} ca -config "${PKI_CA_CONF_FILE}" -keyfile "${PKI_KEY_INPUT_FILE}" -cert "${PKI_CERT_INPUT_FILE}" -passin "${PKI_KEY_INPUT_PASSWORD_PREFIX}":"${PKI_KEY_INPUT_PASSWORD}" -rand_serial -rand "/tmp/${TMP_TIME}_RANDFILE" -crl_lastupdate "${TMP_CRL_STARTDATE}" -crl_nextupdate "${TMP_CRL_ENDDATE}" -gencrl -out "${PKI_CRL_OUTPUT_FILE}"
         else
             ${CMD_OPENSSL} ca -config "${PKI_CA_CONF_FILE}" -passin "${PKI_KEY_INPUT_PASSWORD_PREFIX}":"${PKI_KEY_INPUT_PASSWORD}" -rand_serial -rand "/tmp/${TMP_TIME}_RANDFILE" -crl_lastupdate "${TMP_CRL_STARTDATE}" -crl_nextupdate "${TMP_CRL_ENDDATE}" -gencrl -out "${PKI_CRL_OUTPUT_FILE}" 2>/dev/null
         fi
@@ -1235,12 +1243,16 @@ function f_crl_set() {
         fi
     fi
 
+    if [[ "${PKI_CRL_OUTPUT_FORMAT}" =~ ^(DER|der)$ ]] ; then
+        ${CMD_OPENSSL} crl -in "${PKI_CRL_OUTPUT_FILE}" -outform der -out "${PKI_CRL_OUTPUT_FILE}" 2>/dev/null
+    fi
+
     if [ $? -eq ${TMP_TRUE} ] && [ -f "${PKI_CRL_OUTPUT_FILE}" ] ; then
-        ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_GREEN}[${TMP_OUTPUT_CHECK}] [$( ${CMD_DATE} -d 'now' -u +"%Y%m%d%H%M%SZ" )] [The CRL file '${PKI_CRL_OUTPUT_FILE}' with CA configuration file '${PKI_CA_CONF_FILE}' was successfully created.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
+        ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_GREEN}[${TMP_OUTPUT_CHECK}] [$( ${CMD_DATE} -d 'now' -u +"%Y%m%d%H%M%SZ" )] [The CRL file '${PKI_CRL_OUTPUT_FILE}' with CA configuration file '${PKI_CA_CONF_FILE}' and output format '${PKI_CRL_OUTPUT_FORMAT}' was successfully created.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
         ${CMD_RM} --force "/tmp/${TMP_TIME}_RANDFILE" >/dev/null 2>&1
         exit ${TMP_TRUE}
     else
-        ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} -d 'now' -u +"%Y%m%d%H%M%SZ" )] [The CRL file '${PKI_CRL_OUTPUT_FILE}' with CA configuration file '${PKI_CA_CONF_FILE}' could not be created.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
+        ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} -d 'now' -u +"%Y%m%d%H%M%SZ" )] [The CRL file '${PKI_CRL_OUTPUT_FILE}' with CA configuration file '${PKI_CA_CONF_FILE}' and output format '${PKI_CRL_OUTPUT_FORMAT}' could not be created.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
         ${CMD_RM} --force "/tmp/${TMP_TIME}_RANDFILE" >/dev/null 2>&1
         exit ${TMP_FALSE}
     fi
@@ -1806,6 +1818,33 @@ function f_overview_set() {
     fi
 }
 
+function f_pkcs12_set() {
+    if [ "${PKI_KEY_INPUT_PASSWORD}x" == "x" ] ; then
+        ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The variable 'PKI_KEY_INPUT_PASSWORD' must be set with the valid password for the private key.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
+        exit ${TMP_FALSE}
+    fi
+
+    if [ "${PKI_KEY_INPUT_FILE}x" == "x" ] ; then
+        ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The variable 'PKI_KEY_INPUT_FILE' must be set with a valid private key input path.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
+        exit ${TMP_FALSE}
+    fi
+
+    if [ "${PKI_CERT_INPUT_FILE}x" == "x" ] ; then
+        ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The variable 'PKI_CERT_INPUT_FILE' must be set with a valid certifcate input path.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
+        exit ${TMP_FALSE}
+    fi
+
+    ${CMD_OPENSSL} pkcs12 -export -inkey "${PKI_KEY_INPUT_FILE}" -in "${PKI_CERT_INPUT_FILE}" -passin "${PKI_KEY_INPUT_PASSWORD_PREFIX}":"${PKI_KEY_INPUT_PASSWORD}" -out "${PKI_CERT_INPUT_FILE}.pfx" 2>/dev/null
+
+    if [ $? -eq ${TMP_TRUE} ] && [ -f "${PKI_CERT_INPUT_FILE}.pfx" ] ; then
+        ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_GREEN}[${TMP_OUTPUT_CHECK}] [$( ${CMD_DATE} -d 'now' -u +"%Y%m%d%H%M%SZ" )] [The PKCS#12 file '${PKI_CERT_INPUT_FILE}.pfx' with private key '${PKI_KEY_INPUT_FILE}' and certificate file '${PKI_CERT_INPUT_FILE}' was successfully created.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
+        exit ${TMP_TRUE}
+    else
+        ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} -d 'now' -u +"%Y%m%d%H%M%SZ" )] [The PKCS#12 file '${PKI_CERT_INPUT_FILE}.pfx' with private key '${PKI_KEY_INPUT_FILE}' and certificate file '${PKI_CERT_INPUT_FILE}' could not be created.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
+        exit ${TMP_FALSE}
+    fi
+}
+
 # check log size and rotate if necessary
 f_log_verify
 
@@ -1854,6 +1893,9 @@ case "${1}" in
         ;;
     "overview_create")
         f_overview_set
+        ;;
+    "pkcs12_create")
+        f_pkcs12_set
         ;;
     *)
         ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} -d 'now' -u +"%Y%m%d%H%M%SZ" )] [The PKI script option '${1}' is not a valid one. Please use one of the following options:\n\tca_create\t: Create a new root or intermediate CA.\n\tcert_create\t: Sign a certificate with a existent CA.\n\tcert_revoke\t: Revoke a certificate from a existent CA.\n\tcrl_create\t: Create a CRL for a existent CA.\n\t crl_buffer\t: Copy a CRL from a existent CA to another file.\n\tkey_create\t: Create a new private key for a certificate or request.\n\treq_create\t: Create a new request with a private key.\n\toverview_create\t: Create a basic CA overview with essential informations as a plain HTML file with Javascript and CSS.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
