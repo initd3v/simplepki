@@ -53,6 +53,8 @@ CMD_MKDIR=$( ${CMD_WHEREIS} mkdir | ${CMD_AWK} '{ print $2 }' )
 CMD_MKDIR=${CMD_MKDIR:-/usr/bin/mkdir}
 CMD_OPENSSL=$( ${CMD_WHEREIS} openssl | ${CMD_AWK} '{ print $2 }' )
 CMD_OPENSSL=${CMD_OPENSSL:-/usr/bin/openssl}
+CMD_RM=$( ${CMD_WHEREIS} rm | ${CMD_AWK} '{ print $2 }' )
+CMD_RM=${CMD_RM:-/usr/bin/rm}
 CMD_SED=$( ${CMD_WHEREIS} sed | ${CMD_AWK} '{ print $2 }' )
 CMD_SED=${CMD_SED:-/usr/bin/sed}
 CMD_SEQ=$( ${CMD_WHEREIS} seq | ${CMD_AWK} '{ print $2 }' )
@@ -72,7 +74,7 @@ CMD_WHOAMI=${CMD_WHOAMI:-/usr/bin/whoami}
 CMD_XARGS=$( ${CMD_WHEREIS} xargs | ${CMD_AWK} '{ print $2 }' )
 CMD_XARGS=${CMD_XARGS:-/usr/bin/xargs}
 
-for TMP in "${CMD_ECHO}" "${CMD_AWK}" "${CMD_WHEREIS}" "${CMD_CAT}" "${CMD_DATE}" "${CMD_DD}" "${CMD_DIRNAME}" "${CMD_DIRNAME}" "${CMD_ENV}" "${CMD_GREP}" "${CMD_MKDIR}" "${CMD_OPENSSL}" "${CMD_SED}" "${CMD_SEQ}" "${CMD_TAIL}" "${CMD_TEE}" "${CMD_TOUCH}" "${CMD_UNSET}" "${CMD_WC}" "${CMD_WHOAMI}" "${CMD_XARGS}" ; do
+for TMP in "${CMD_ECHO}" "${CMD_AWK}" "${CMD_WHEREIS}" "${CMD_CAT}" "${CMD_DATE}" "${CMD_DD}" "${CMD_DIRNAME}" "${CMD_DIRNAME}" "${CMD_ENV}" "${CMD_GREP}" "${CMD_MKDIR}" "${CMD_OPENSSL}" "${CMD_RM}" "${CMD_SED}" "${CMD_SEQ}" "${CMD_TAIL}" "${CMD_TEE}" "${CMD_TOUCH}" "${CMD_UNSET}" "${CMD_WC}" "${CMD_WHOAMI}" "${CMD_XARGS}" ; do
     if [ "${TMP}x" == "x" ] || [ ! -f "${TMP}" ] ; then
         TMP_NAME=(${!TMP@})
         ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The bash variable '${TMP_NAME}' with value '${TMP}' does not reference to a valid command binary path or is empty.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
@@ -112,7 +114,7 @@ function f_parameter_verify() {
         exit ${TMP_FALSE} 
     fi
     
-    if [ "${2}x" == "x" ] && [ "${1}" != "PKI_KEY_PASSWORD" ] ; then
+    if [ "${2}x" == "x" ] && [ "${1}" != "PKI_KEY_INPUT_PASSWORD" ] ; then
         ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [An empty value to parameter '${1}' was passed. Every parameter must consist of an entry and a value divided by '=' and separated to other parameters by ':::'.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
         exit ${TMP_FALSE} 
     fi
@@ -183,15 +185,6 @@ function f_parameter_verify() {
                     exit ${TMP_FALSE}
                     ;;
             esac
-            ;;
-        "PKI_KEY_PASSWORD")
-            TMP_KEY_PASSWORD_NUMBER_COUNT=$( ${CMD_GREP} --extended-regexp --only-matching '[0-9]' <<< "${2}" | ${CMD_WC} --lines )
-            TMP_KEY_PASSWORD_ALPHABETICAL_LOWER_COUNT=$( ${CMD_GREP} --extended-regexp --only-matching '[a-z]' <<< "${2}" | ${CMD_WC} --lines )
-            TMP_KEY_PASSWORD_ALPHABETICAL_UPPER_COUNT=$( ${CMD_GREP} --extended-regexp --only-matching '[A-Z]' <<< "${2}" | ${CMD_WC} --lines )
-            if [ "${#2}" -lt 8 ] || [ "${#2}" -gt 31 ] || [ ${TMP_KEY_PASSWORD_NUMBER_COUNT} -lt 2 ] || [ ${TMP_KEY_PASSWORD_ALPHABETICAL_LOWER_COUNT} -lt 1 ] || [ ${TMP_KEY_PASSWORD_ALPHABETICAL_UPPER_COUNT} -lt 1 ] ; then
-                ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} -d 'now' -u +"%Y%m%d%H%M%SZ" )] [The private key password in variable '${1}' must consist of 8 to 31 characters and at least 2 numbers, 1 upper and 1 lower case alphabetical character.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
-                exit ${TMP_FALSE}
-            fi 
             ;;
         "PKI_CA_OUTPUT_PATH")
             if [ ! -d "${2}" ] ; then
@@ -417,13 +410,29 @@ function f_parameter_verify() {
             fi
 
             # check for a valid CA configuration file
-            ${CMD_OPENSSL} ca -config "${2}" -passin "pass:${PKI_KEY_INPUT_PASSWORD}" >/dev/null 2>&1
+            ${CMD_OPENSSL} ca -config "${2}" -passin "${PKI_KEY_INPUT_PASSWORD_PREFIX}":"${PKI_KEY_INPUT_PASSWORD}" >/dev/null 2>&1
             if [ $? -ne ${TMP_TRUE} ] ; then
                 ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} -d 'now' -u +"%Y%m%d%H%M%SZ" )] [The passed CA configuration file '${2}' in variable 'PKI_CA_CONF_FILE' does not seem to be a valid openssl configuration file.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
                 exit ${TMP_FALSE}
             fi
             ;;
         "PKI_KEY_INPUT_PASSWORD")
+            TMP_KEY_PASSWORD_INPUT_PATH=$( ${CMD_DIRNAME} "${2}" )
+            if [ -d "${TMP_KEY_PASSWORD_INPUT_PATH}" ] && [[ "${2}" =~ ^.*/.*$ ]] ; then
+                if [ ! -f "${2}" ] ; then
+                    ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} -d 'now' -u +"%Y%m%d%H%M%SZ" )] [The passed key input password value '${2}' in variable 'PKI_KEY_INPUT_PASSWORD' seems to be a filepath but the file can not be found.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
+                    exit ${TMP_FALSE}
+                fi
+
+                if [ $( ${CMD_WC} -l < ${2} ) -ne 1 ] || [ ! -r "${2}" ] ; then
+                    ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} -d 'now' -u +"%Y%m%d%H%M%SZ" )] [The passed key input password value '${2}' in variable 'PKI_KEY_INPUT_PASSWORD' needs to consist of exactly one line ansd must be readable by the executing user when passed as file.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
+                    exit ${TMP_FALSE}
+                fi
+
+                export PKI_KEY_INPUT_PASSWORD_PREFIX="file"
+            else
+                export PKI_KEY_INPUT_PASSWORD_PREFIX="pass"
+            fi
             ;;
         "PKI_CA_EXTENSION")
             if [[ ! "${2}" =~ ^[0-9a-Z_]{2,32}$ ]] ; then
@@ -543,50 +552,65 @@ function function_key_set() {
 function f_key_set() {
     if [ "${PKI_KEY_OUTPUT_FILE}x" == "x" ] ; then
         ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The variable 'PKI_KEY_OUTPUT_FILE' must be set with a valid file path.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
-        exit ${TMP_FALSE}
+        return ${TMP_FALSE}
     fi
     
     if [ "${PKI_KEY_ALGORITHM}x" == "x" ] ; then
         ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The variable 'PKI_KEY_ALGORITHM' must be set with a valid algorithm (ec / rsa / ed25519).]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
-        exit ${TMP_FALSE}
+        return ${TMP_FALSE}
     fi
     
     if [ "${PKI_KEY_ALGORITHM,,}" == "ec" ] && [[ ! "${PKI_KEY_ENCRYPTION}" =~ ^(prime256v1|prime384v1|prime521v1)$ ]] ; then
         ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The variable 'PKI_KEY_ENCRYPTION' must be set with a valid algorithm (prime256v1 / prime384v1 / prime521v1) when using variable 'PKI_KEY_ALGORITHM' with value 'ec'.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
-        exit ${TMP_FALSE}
+        return ${TMP_FALSE}
     fi
     
     if [ "${PKI_KEY_ALGORITHM,,}" == "rsa" ] && [[ ! "${PKI_KEY_ENCRYPTION}" =~ ^(rsa3072|rsa4096|rsa8192)$ ]] ; then
         ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The variable 'PKI_KEY_ENCRYPTION' must be set with a valid algorithm (rsa3072 / rsa4096) when using variable 'PKI_KEY_ALGORITHM' with value 'rsa'.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
-        exit ${TMP_FALSE}
+        return ${TMP_FALSE}
     fi
     
     if [ "${PKI_KEY_ALGORITHM,,}" == "ed25519" ] && [ "${PKI_KEY_ENCRYPTION}x" != "x" ] ; then
         ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The variable 'PKI_KEY_ENCRYPTION' must be not set when using variable 'PKI_KEY_ALGORITHM' with value 'ed25519'.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
-        exit ${TMP_FALSE}
+        return ${TMP_FALSE}
     fi
     
-    if [ "${PKI_KEY_PASSWORD}x" == "x" ] ; then
-        ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The variable 'PKI_KEY_PASSWORD' must be set with a valid password (8-31 characters with at least 2 numbers, 1 lower case and 1 upper case alphabetical character).]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
-        exit ${TMP_FALSE}
+    if [ "${PKI_KEY_INPUT_PASSWORD}x" == "x" ] ; then
+        ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The variable 'PKI_KEY_INPUT_PASSWORD' must be set with a valid password plain or in a file (8-31 characters with at least 2 numbers, 1 lower case and 1 upper case alphabetical character).]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
+        return ${TMP_FALSE}
     fi
-    
+
+    if [ "${PKI_KEY_INPUT_PASSWORD_PREFIX}" == "file" ] ; then
+        TMP_KEY_PASSWORD=$( ${CMD_CAT} "${PKI_KEY_INPUT_PASSWORD}" )
+    else
+        TMP_KEY_PASSWORD="${PKI_KEY_INPUT_PASSWORD}"
+    fi
+
+    TMP_KEY_PASSWORD_NUMBER_COUNT=$( ${CMD_GREP} --extended-regexp --only-matching '[0-9]' <<< "${TMP_KEY_PASSWORD}" | ${CMD_WC} --lines )
+    TMP_KEY_PASSWORD_ALPHABETICAL_LOWER_COUNT=$( ${CMD_GREP} --extended-regexp --only-matching '[a-z]' <<< "${TMP_KEY_PASSWORD}" | ${CMD_WC} --lines )
+    TMP_KEY_PASSWORD_ALPHABETICAL_UPPER_COUNT=$( ${CMD_GREP} --extended-regexp --only-matching '[A-Z]' <<< "${TMP_KEY_PASSWORD}" | ${CMD_WC} --lines )
+    if [ "${#TMP_KEY_PASSWORD}" -lt 8 ] || [ "${#TMP_KEY_PASSWORD}" -gt 31 ] || [ ${TMP_KEY_PASSWORD_NUMBER_COUNT} -lt 2 ] || [ ${TMP_KEY_PASSWORD_ALPHABETICAL_LOWER_COUNT} -lt 1 ] || [ ${TMP_KEY_PASSWORD_ALPHABETICAL_UPPER_COUNT} -lt 1 ] ; then
+        ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} -d 'now' -u +"%Y%m%d%H%M%SZ" )] [The private key password in variable '${PKI_KEY_INPUT_PASSWORD}' must consist of 8 to 31 characters and at least 2 numbers, 1 upper and 1 lower case alphabetical character.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
+        return ${TMP_FALSE}
+    fi
+
+
     case "${PKI_KEY_ALGORITHM}" in
         "ec")
-            ${CMD_OPENSSL} genpkey -quiet -out "${PKI_KEY_OUTPUT_FILE}" -algorithm "${PKI_OPENSSL_KEY_ALGORITHM}" -aes-256-ecb -pkeyopt "${PKI_OPENSSL_KEY_OPTION1}" -pkeyopt "${PKI_OPENSSL_KEY_OPTION2}" -pass pass:"${PKI_KEY_PASSWORD}" 2>/dev/null
+            ${CMD_OPENSSL} genpkey -quiet -out "${PKI_KEY_OUTPUT_FILE}" -algorithm "${PKI_OPENSSL_KEY_ALGORITHM}" -aes-256-ecb -pkeyopt "${PKI_OPENSSL_KEY_OPTION1}" -pkeyopt "${PKI_OPENSSL_KEY_OPTION2}" -pass "${PKI_KEY_INPUT_PASSWORD_PREFIX}":"${PKI_KEY_INPUT_PASSWORD}" 2>/dev/null
             TMP_CHECK_KEY=$( ${CMD_OPENSSL} ec -check -in "${PKI_KEY_OUTPUT_FILE}" -passin pass: 2>&1 | ${CMD_GREP} --ignore-case "bad\ decrypt" 2>/dev/null )
             ;;
         "rsa")
-            ${CMD_OPENSSL} genpkey -quiet -out "${PKI_KEY_OUTPUT_FILE}" -algorithm "${PKI_OPENSSL_KEY_ALGORITHM}" -aes-256-ecb -pkeyopt "${PKI_OPENSSL_KEY_OPTION1}" -pass pass:"${PKI_KEY_PASSWORD}" 2>/dev/null
+            ${CMD_OPENSSL} genpkey -quiet -out "${PKI_KEY_OUTPUT_FILE}" -algorithm "${PKI_OPENSSL_KEY_ALGORITHM}" -aes-256-ecb -pkeyopt "${PKI_OPENSSL_KEY_OPTION1}" -pass "${PKI_KEY_INPUT_PASSWORD_PREFIX}":"${PKI_KEY_INPUT_PASSWORD}" 2>/dev/null
             TMP_CHECK_KEY=$( ${CMD_OPENSSL} rsa -check -in "${PKI_KEY_OUTPUT_FILE}" -passin pass: 2>&1 | ${CMD_GREP} --ignore-case "bad\ decrypt" 2>/dev/null )
             ;;
         "ed25519")
-            ${CMD_OPENSSL} genpkey -quiet -out "${PKI_KEY_OUTPUT_FILE}" -algorithm "${PKI_OPENSSL_KEY_ALGORITHM}" -aes-256-ecb -pass pass:"${PKI_KEY_PASSWORD}" 2>/dev/null
+            ${CMD_OPENSSL} genpkey -quiet -out "${PKI_KEY_OUTPUT_FILE}" -algorithm "${PKI_OPENSSL_KEY_ALGORITHM}" -aes-256-ecb -pass "${PKI_KEY_INPUT_PASSWORD_PREFIX}":"${PKI_KEY_INPUT_PASSWORD}" 2>/dev/null
             TMP_CHECK_KEY=$( ${CMD_OPENSSL} ec -check -in "${PKI_KEY_OUTPUT_FILE}" -passin pass: 2>&1 | ${CMD_GREP} --ignore-case "bad\ decrypt" 2>/dev/null )
             ;;
         *)
             ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} -d 'now' -u +"%Y%m%d%H%M%SZ" )] [The private key algorithm '${PKI_KEY_ALGORITHM}' is unknown. The private key could not be generated.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
-            exit ${TMP_FALSE}
+            return ${TMP_FALSE}
             ;;
     esac
     
@@ -608,62 +632,62 @@ function f_key_set() {
 function f_req_set() {
     if [ "${PKI_REQ_OUTPUT_FILE}x" == "x" ] ; then
         ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The variable 'PKI_REQ_OUTPUT_FILE' must be set with a valid request output filename path.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
-        exit ${TMP_FALSE}
+        return ${TMP_FALSE}
     fi
     
     if [ "${PKI_KEY_INPUT_FILE}x" == "x" ] ; then
         ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The variable 'PKI_KEY_INPUT_FILE' must be set with a valid Key input path.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
-        exit ${TMP_FALSE}
+        return ${TMP_FALSE}
     fi
     
     if [ "${PKI_KEY_INPUT_PASSWORD}x" == "x" ] ; then
         ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The variable 'PKI_KEY_INPUT_PASSWORD' must be set with the valid password for key '${PKI_KEY_INPUT_FILE}'.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
-        exit ${TMP_FALSE}
+        return ${TMP_FALSE}
     fi
     
     if [ "${PKI_REQ_HASH}x" == "x" ] ; then
         ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The variable 'PKI_REQ_HASH' must be set with a valid hash value ('sha384' / 'sha512' / 'sha512-256' / 'sha3-256' / 'sha3-384' / 'sha3-512').]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
-        exit ${TMP_FALSE}
+        return ${TMP_FALSE}
     fi
     
     if [ "${PKI_REQ_COUNTRY}x" == "x" ] ; then
         ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The variable 'PKI_REQ_COUNTRY' must be set with a valid country name value (two capital letters).]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
-        exit ${TMP_FALSE}
+        return ${TMP_FALSE}
     fi
     
     if [ "${PKI_REQ_STATE}x" == "x" ] ; then
         ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The variable 'PKI_REQ_STATE' must be set with a valid state name value (2 to 32 letters).]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
-        exit ${TMP_FALSE}
+        return ${TMP_FALSE}
     fi
     
     if [ "${PKI_REQ_LOCATION}x" == "x" ] ; then
         ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The variable 'PKI_REQ_LOCATION' must be set with a valid location name value (2 to 32 letters).]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
-        exit ${TMP_FALSE}
+        return ${TMP_FALSE}
     fi
     
     if [ "${PKI_REQ_ORGANIZATION}x" == "x" ] ; then
         ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The variable 'PKI_REQ_ORGANIZATION' must be set with a valid organization name value (2 to 32 letters).]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
-        exit ${TMP_FALSE}
+        return ${TMP_FALSE}
     fi
     
     if [ "${PKI_REQ_ORGANIZATIONUNIT}x" == "x" ] ; then
         ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The variable 'PKI_REQ_ORGANIZATIONUNIT' must be set with a valid organization unit name value (2 to 32 letters).]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
-        exit ${TMP_FALSE}
+        return ${TMP_FALSE}
     fi
     
     if [ "${PKI_REQ_COMMONNAME}x" == "x" ] ; then
         ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The variable 'PKI_REQ_COMMONNAME' must be set with a valid common name value (2 up to 32 characters consisting of uppercase, lowercase or the special characters '.' / '@').]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
-        exit ${TMP_FALSE}
+        return ${TMP_FALSE}
     fi
     
     if [ "${PKI_REQ_KEY_USAGE}x" == "x" ] ; then
         ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The variable 'PKI_REQ_KEY_USAGE' must be set with a valid key usage value ('critical', 'digitalSignature', 'nonRepudiation', 'keyEncipherment', 'dataEncipherment', 'keyAgreement', 'keyCertSign', 'cRLSign', 'encipherOnly', 'decipherOnly' divided by ', ' for multiple values).]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
-        exit ${TMP_FALSE}
+        return ${TMP_FALSE}
     fi
     
     if [ "${PKI_CA_ROOT}x" == "x" ] && [ "${PKI_REQ_ALTERNATE_NAME}x" == "x" ] ; then
         ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The variable 'PKI_REQ_ALTERNATE_NAME' must be set with at least one valid value for DNS, IP or EMAIL (multiple values divided by ', ').]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
-        exit ${TMP_FALSE}
+        return ${TMP_FALSE}
     fi
     
     export PKI_CA_PATHLENGTH=${PKI_CA_PATHLENGTH:-0}
@@ -714,7 +738,7 @@ function f_req_set() {
         return ${TMP_FALSE}
     fi
 
-    ${CMD_OPENSSL} req -new -key "${PKI_KEY_INPUT_FILE}" -passin "pass:${PKI_KEY_INPUT_PASSWORD}" -rand "/tmp/${TMP_TIME}_RANDFILE" -config "${PKI_REQ_OUTPUT_FILE}.conf" -out "${PKI_REQ_OUTPUT_FILE}"
+    ${CMD_OPENSSL} req -new -key "${PKI_KEY_INPUT_FILE}" -passin "${PKI_KEY_INPUT_PASSWORD_PREFIX}":"${PKI_KEY_INPUT_PASSWORD}" -rand "/tmp/${TMP_TIME}_RANDFILE" -config "${PKI_REQ_OUTPUT_FILE}.conf" -out "${PKI_REQ_OUTPUT_FILE}"
     
     if [ $? -eq ${TMP_TRUE} ] ; then
         ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_GREEN}[${TMP_OUTPUT_CHECK}] [$( ${CMD_DATE} -d 'now' -u +"%Y%m%d%H%M%SZ" )] [The request file '${PKI_REQ_OUTPUT_FILE}' with configuration '${PKI_REQ_OUTPUT_FILE}.conf' was successfully created.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
@@ -730,32 +754,32 @@ function f_req_set() {
 function f_cert_set() {
     if [ "${PKI_CERT_OUTPUT_FILE}x" == "x" ] ; then
         ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The variable 'PKI_CERT_OUTPUT_FILE' must be set with a valid filename path.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
-        exit ${TMP_FALSE}
+        return ${TMP_FALSE}
     fi
     
     if [ "${PKI_CERT_DURATION}x" == "x" ] ; then
         ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The variable 'PKI_CERT_DURATION' must be set with a valid format ( '[1-369] days' / '[1-59] weeks' / '[1-12] months' / '[1-10] years').]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
-        exit ${TMP_FALSE}
+        return ${TMP_FALSE}
     fi
     
     if [ "${PKI_REQ_INPUT_FILE}x" == "x" ] ; then
         ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The variable 'PKI_REQ_INPUT_FILE' must be set with a valid request file path.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
-        exit ${TMP_FALSE}
+        return ${TMP_FALSE}
     fi
     
     if [ "${PKI_KEY_INPUT_FILE}x" == "x" ] ; then
         ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The variable 'PKI_KEY_INPUT_FILE' must be set with a valid private key input path for the CA.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
-        exit ${TMP_FALSE}
+        return ${TMP_FALSE}
     fi
     
     if [ "${PKI_KEY_INPUT_PASSWORD}x" == "x" ] ; then
         ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The variable 'PKI_KEY_INPUT_PASSWORD' must be set with the valid password for the CA private key '${PKI_KEY_INPUT_FILE}'.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
-        exit ${TMP_FALSE}
+        return ${TMP_FALSE}
     fi
     
     if [ "${PKI_CA_CONF_FILE}x" != "x" ] && [ "${PKI_CA_ROOT}x" == "1x" ] ; then
         ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [Either the CA configuration file path at variable 'PKI_CA_CONF_FILE' or the CA root indicator 'PKI_CA_ROOT=1' must be set. ]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
-        exit ${TMP_FALSE}
+        return ${TMP_FALSE}
     fi
     
     if [ "${PKI_CA_CONF_FILE}x" != "x" ] ; then
@@ -763,7 +787,7 @@ function f_cert_set() {
             TMP_CA_EXTENSION_CHECK=$( ${CMD_GREP} --extended-regexp "^\[\ ${PKI_CA_EXTENSION}\ \]$" < "${PKI_CA_CONF_FILE}" 2>/dev/null )
             if [ $? -eq ${TMP_FALSE} ] || [ "${TMP_CA_EXTENSION_CHECK}x" == "x" ] ; then
                 ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The passed CA profile value '${PKI_CA_EXTENSION}' in variable 'PKI_CA_EXTENSION' can not be found in the CA configuration file '${PKI_CA_CONF_FILE}'.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
-                exit ${TMP_FALSE}
+                return ${TMP_FALSE}
             fi
         fi
     fi
@@ -777,7 +801,7 @@ function f_cert_set() {
     if [ $? -ne ${TMP_TRUE} ] ; then
         ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The start date for the certificate in variable 'TMP_CERT_STARTDATE' could not be generated and has value '${TMP_CERT_STARTDATE}'.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
         ${CMD_RM} --force "/tmp/${TMP_TIME}_RANDFILE" >/dev/null 2>&1
-        exit ${TMP_FALSE}
+        return ${TMP_FALSE}
     fi
     
     TMP_CERT_ENDDATE=$( ${CMD_DATE} --date 'now' --utc +"%Y-%m-%d 11:59:59.0" -d "+${PKI_CERT_DURATION}" 2>/dev/null )
@@ -786,16 +810,16 @@ function f_cert_set() {
     if [ $? -ne ${TMP_TRUE} ] ; then
         ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The end date for the certificate in variable 'TMP_CERT_ENDDATE' could not be generated and has value '${TMP_CERT_ENDDATE}'.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
         ${CMD_RM} --force "/tmp/${TMP_TIME}_RANDFILE" >/dev/null 2>&1
-        exit ${TMP_FALSE}
+        return ${TMP_FALSE}
     fi
     
     if [ "${PKI_CA_ROOT}x" == "1x" ] ; then
-        ${CMD_OPENSSL} req -x509 -in "${PKI_REQ_INPUT_FILE}" -not_before "${TMP_CERT_STARTDATE}" -not_after "${TMP_CERT_ENDDATE}" -key "${PKI_KEY_INPUT_FILE}" -passin pass:"${PKI_KEY_INPUT_PASSWORD}" -rand "/tmp/${TMP_TIME}_RANDFILE" -config "${PKI_CA_OUTPUT_PATH}/${PKI_CA_NAME}/.private/${PKI_CA_NAME}.conf" -extensions "v3_root_ca" -out "${PKI_CERT_OUTPUT_FILE}" 2>/dev/null
+        ${CMD_OPENSSL} req -x509 -in "${PKI_REQ_INPUT_FILE}" -not_before "${TMP_CERT_STARTDATE}" -not_after "${TMP_CERT_ENDDATE}" -key "${PKI_KEY_INPUT_FILE}" -passin "${PKI_KEY_INPUT_PASSWORD_PREFIX}":"${PKI_KEY_INPUT_PASSWORD}" -rand "/tmp/${TMP_TIME}_RANDFILE" -config "${PKI_CA_OUTPUT_PATH}/${PKI_CA_NAME}/.private/${PKI_CA_NAME}.conf" -extensions "v3_root_ca" -out "${PKI_CERT_OUTPUT_FILE}" 2>/dev/null
     else
         if [ "${PKI_CA_EXTENSION}x" != "x" ] ; then
-            ${CMD_OPENSSL} ca -config "${PKI_CA_CONF_FILE}" -keyfile "${PKI_KEY_INPUT_FILE}" -passin pass:"${PKI_KEY_INPUT_PASSWORD}" -rand_serial -rand "/tmp/${TMP_TIME}_RANDFILE" -startdate "${TMP_CERT_STARTDATE}" -enddate "${TMP_CERT_ENDDATE}" -extensions "${PKI_CA_EXTENSION}" -in "${PKI_REQ_INPUT_FILE}" -out "${PKI_CERT_OUTPUT_FILE}"
+            ${CMD_OPENSSL} ca -config "${PKI_CA_CONF_FILE}" -keyfile "${PKI_KEY_INPUT_FILE}" -passin "${PKI_KEY_INPUT_PASSWORD_PREFIX}":"${PKI_KEY_INPUT_PASSWORD}" -rand_serial -rand "/tmp/${TMP_TIME}_RANDFILE" -startdate "${TMP_CERT_STARTDATE}" -enddate "${TMP_CERT_ENDDATE}" -extensions "${PKI_CA_EXTENSION}" -in "${PKI_REQ_INPUT_FILE}" -out "${PKI_CERT_OUTPUT_FILE}"
         else
-            ${CMD_OPENSSL} ca -config "${PKI_CA_CONF_FILE}" -keyfile "${PKI_KEY_INPUT_FILE}" -passin pass:"${PKI_KEY_INPUT_PASSWORD}" -rand_serial -rand "/tmp/${TMP_TIME}_RANDFILE" -startdate "${TMP_CERT_STARTDATE}" -enddate "${TMP_CERT_ENDDATE}" -in "${PKI_REQ_INPUT_FILE}" -out "${PKI_CERT_OUTPUT_FILE}"
+            ${CMD_OPENSSL} ca -config "${PKI_CA_CONF_FILE}" -keyfile "${PKI_KEY_INPUT_FILE}" -passin "${PKI_KEY_INPUT_PASSWORD_PREFIX}":"${PKI_KEY_INPUT_PASSWORD}" -rand_serial -rand "/tmp/${TMP_TIME}_RANDFILE" -startdate "${TMP_CERT_STARTDATE}" -enddate "${TMP_CERT_ENDDATE}" -in "${PKI_REQ_INPUT_FILE}" -out "${PKI_CERT_OUTPUT_FILE}"
         fi
     fi
     
@@ -873,13 +897,6 @@ function f_ca_set() {
     fi
 
     TMP_PKI_KEY_INPUT_FILE="${PKI_KEY_INPUT_FILE:-${PKI_CA_OUTPUT_PATH}/${PKI_CA_NAME}/.private/${PKI_CA_NAME}.key}"
-
-    if [ "${PKI_KEY_INPUT_PASSWORD}x" != "x" ] && [ "${PKI_CA_ROOT}x" == "1x" ] ; then
-        ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The variable 'PKI_KEY_INPUT_PASSWORD' can not be set for a root CA as it is automatically set to the variable 'PKI_KEY_PASSWORD'.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
-        exit ${TMP_FALSE}
-    fi
-
-    TMP_PKI_KEY_INPUT_PASSWORD="${PKI_KEY_INPUT_PASSWORD:-${PKI_KEY_PASSWORD}}"
     
     if [ "${PKI_CERT_OUTPUT_FILE}x" != "x" ] ; then
         ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The variable 'PKI_CERT_OUTPUT_FILE' can not be set as it is automatically set to '${PKI_CA_OUTPUT_PATH}/${PKI_CA_NAME}/public/${PKI_CA_NAME}.cer'.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
@@ -929,8 +946,6 @@ function f_ca_set() {
         ${CMD_RM} --recursive --force "${PKI_CA_OUTPUT_PATH}/${PKI_CA_NAME}"
         exit ${TMP_FALSE}
     fi
-    
-    export "PKI_KEY_INPUT_PASSWORD=${PKI_KEY_PASSWORD}"
 
     export "PKI_KEY_INPUT_FILE=${PKI_CA_OUTPUT_PATH}/${PKI_CA_NAME}/.private/${PKI_CA_NAME}.key"
 
@@ -1141,7 +1156,6 @@ function f_ca_set() {
         ${CMD_ECHO} 'crlDistributionPoints           = cert_default_crls' >> "${PKI_CA_OUTPUT_PATH}/${PKI_CA_NAME}/.private/${PKI_CA_NAME}.conf"
         
         if [ "${PKI_CA_ROOT}x" == "1x" ] ; then
-            export "PKI_KEY_INPUT_PASSWORD=${TMP_PKI_KEY_INPUT_PASSWORD}"
             export "PKI_KEY_INPUT_FILE=${TMP_PKI_KEY_INPUT_FILE}"
 
             f_cert_set
@@ -1151,7 +1165,7 @@ function f_ca_set() {
                 exit ${TMP_FALSE}
             fi
 
-            ${CMD_OPENSSL} ca -config "${PKI_CA_OUTPUT_PATH}/${PKI_CA_NAME}/.private/${PKI_CA_NAME}.conf" -passin "pass:${PKI_KEY_INPUT_PASSWORD}" >/dev/null 2>&1
+            ${CMD_OPENSSL} ca -config "${PKI_CA_OUTPUT_PATH}/${PKI_CA_NAME}/.private/${PKI_CA_NAME}.conf" -passin "${PKI_KEY_INPUT_PASSWORD_PREFIX}":"${PKI_KEY_INPUT_PASSWORD}" >/dev/null 2>&1
             if [ $? -ne ${TMP_TRUE} ] ; then
                 ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} -d 'now' -u +"%Y%m%d%H%M%SZ" )] [The generated root CA configuration file '${PKI_CA_OUTPUT_PATH}/${PKI_CA_NAME}/.private/${PKI_CA_NAME}.conf' does not seem to be a valid openssl configuration file. Deleting non-functional CA structure '${PKI_CA_OUTPUT_PATH}/${PKI_CA_NAME}'.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
                 ${CMD_RM} --recursive --force "${PKI_CA_OUTPUT_PATH}/${PKI_CA_NAME}"
@@ -1209,15 +1223,15 @@ function f_crl_set() {
         fi
 
         if [ "${PKI_KEY_INPUT_FILE}x" != "x" ] && [ "${PKI_CERT_INPUT_FILE}x" != "x" ] ; then
-            ${CMD_OPENSSL} ca -config "${PKI_CA_CONF_FILE}" -keyfile "${PKI_KEY_INPUT_FILE}" -cert "${PKI_CERT_INPUT_FILE}" -passin pass:"${PKI_KEY_INPUT_PASSWORD}" -rand_serial -rand "/tmp/${TMP_TIME}_RANDFILE" -crl_lastupdate "${TMP_CRL_STARTDATE}" -crl_nextupdate "${TMP_CRL_ENDDATE}" -gencrl -out "${PKI_CRL_OUTPUT_FILE}" 2>/dev/null
+            ${CMD_OPENSSL} ca -config "${PKI_CA_CONF_FILE}" -keyfile "${PKI_KEY_INPUT_FILE}" -cert "${PKI_CERT_INPUT_FILE}" -passin "${PKI_KEY_INPUT_PASSWORD_PREFIX}":"${PKI_KEY_INPUT_PASSWORD}" -rand_serial -rand "/tmp/${TMP_TIME}_RANDFILE" -crl_lastupdate "${TMP_CRL_STARTDATE}" -crl_nextupdate "${TMP_CRL_ENDDATE}" -gencrl -out "${PKI_CRL_OUTPUT_FILE}" 2>/dev/null
         else
-            ${CMD_OPENSSL} ca -config "${PKI_CA_CONF_FILE}" -passin pass:"${PKI_KEY_INPUT_PASSWORD}" -rand_serial -rand "/tmp/${TMP_TIME}_RANDFILE" -crl_lastupdate "${TMP_CRL_STARTDATE}" -crl_nextupdate "${TMP_CRL_ENDDATE}" -gencrl -out "${PKI_CRL_OUTPUT_FILE}" 2>/dev/null
+            ${CMD_OPENSSL} ca -config "${PKI_CA_CONF_FILE}" -passin "${PKI_KEY_INPUT_PASSWORD_PREFIX}":"${PKI_KEY_INPUT_PASSWORD}" -rand_serial -rand "/tmp/${TMP_TIME}_RANDFILE" -crl_lastupdate "${TMP_CRL_STARTDATE}" -crl_nextupdate "${TMP_CRL_ENDDATE}" -gencrl -out "${PKI_CRL_OUTPUT_FILE}" 2>/dev/null
         fi
     else
         if [ "${PKI_KEY_INPUT_FILE}x" != "x" ] && [ "${PKI_CERT_INPUT_FILE}x" != "x" ] ; then
-            ${CMD_OPENSSL} ca -config "${PKI_CA_CONF_FILE}" -keyfile "${PKI_KEY_INPUT_FILE}" -cert "${PKI_CERT_INPUT_FILE}" -passin pass:"${PKI_KEY_INPUT_PASSWORD}" -rand_serial -rand "/tmp/${TMP_TIME}_RANDFILE" -gencrl -out "${PKI_CRL_OUTPUT_FILE}" 2>/dev/null
+            ${CMD_OPENSSL} ca -config "${PKI_CA_CONF_FILE}" -keyfile "${PKI_KEY_INPUT_FILE}" -cert "${PKI_CERT_INPUT_FILE}" -passin "${PKI_KEY_INPUT_PASSWORD_PREFIX}":"${PKI_KEY_INPUT_PASSWORD}" -rand_serial -rand "/tmp/${TMP_TIME}_RANDFILE" -gencrl -out "${PKI_CRL_OUTPUT_FILE}" 2>/dev/null
         else
-            ${CMD_OPENSSL} ca -config "${PKI_CA_CONF_FILE}" -passin pass:"${PKI_KEY_INPUT_PASSWORD}" -rand_serial -rand "/tmp/${TMP_TIME}_RANDFILE" -gencrl -out "${PKI_CRL_OUTPUT_FILE}" 2>/dev/null
+            ${CMD_OPENSSL} ca -config "${PKI_CA_CONF_FILE}" -passin "${PKI_KEY_INPUT_PASSWORD_PREFIX}":"${PKI_KEY_INPUT_PASSWORD}" -rand_serial -rand "/tmp/${TMP_TIME}_RANDFILE" -gencrl -out "${PKI_CRL_OUTPUT_FILE}" 2>/dev/null
         fi
     fi
 
@@ -1282,7 +1296,7 @@ function f_cert_unset() {
     TMP_TIME=$( ${CMD_DATE} -d 'now' -u +"%Y%m%d%H%M%SZ" )
     ${CMD_DD} if=/dev/urandom bs=1k count=512 of="/tmp/${TMP_TIME}_RANDFILE" 2>/dev/null
 
-    ${CMD_OPENSSL} ca -config "${PKI_CA_CONF_FILE}" -keyfile "${PKI_KEY_INPUT_FILE}" -passin pass:"${PKI_KEY_INPUT_PASSWORD}" -rand_serial -rand "/tmp/${TMP_TIME}_RANDFILE" -revoke "${TMP_CA_CONF_CERTDIR}/${PKI_CERT_SERIAL}.pem" -crl_reason "${PKI_CERT_REVOKE_REASON}" 2>/dev/null
+    ${CMD_OPENSSL} ca -config "${PKI_CA_CONF_FILE}" -keyfile "${PKI_KEY_INPUT_FILE}" -passin "${PKI_KEY_INPUT_PASSWORD_PREFIX}":"${PKI_KEY_INPUT_PASSWORD}" -rand_serial -rand "/tmp/${TMP_TIME}_RANDFILE" -revoke "${TMP_CA_CONF_CERTDIR}/${PKI_CERT_SERIAL}.pem" -crl_reason "${PKI_CERT_REVOKE_REASON}" 2>/dev/null
     if [ $? -eq ${TMP_TRUE} ] ; then
         ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_GREEN}[${TMP_OUTPUT_CHECK}] [$( ${CMD_DATE} -d 'now' -u +"%Y%m%d%H%M%SZ" )] [The certificate with serial '${PKI_CERT_SERIAL}' and CA configuration file '${PKI_CA_CONF_FILE}' was successfully revoked with reason '${PKI_CERT_REVOKE_REASON}'.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
         ${CMD_RM} --force "/tmp/${TMP_TIME}_RANDFILE" >/dev/null 2>&1
