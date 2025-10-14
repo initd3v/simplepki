@@ -20,6 +20,7 @@ Supported functions:
 * Revoke certifikates
 * Create CRL
 * Buffer / copy CRL
+* Convert to PKCS#12 file 
 * Create a HTML overview status page
 
 The Project is written as a GNU bash shell script.
@@ -70,6 +71,7 @@ export PKI_SCRIPT_OUTPUT=1
 * pki.sh crl_buffer
 * pki.sh key_create
 * pki.sh req_create
+* pki.sh pkcs12_create
 * pki.sh overview_create
 
 #### Syntax Description
