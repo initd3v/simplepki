@@ -87,7 +87,7 @@ export PKI_SCRIPT_OUTPUT=1
 |                       | PKI_CA_CERT_POLICY                    | necessary     | OID representing the certificate policy.                                                                                              |
 |                       | PKI_KEY_ALGORITHM                     | necessary     | Encryption algorithm 'ec', 'rsa' or 'ed25519'.                                                                                        |
 |                       | PKI_KEY_ENCRYPTION                    | necessary     | Encryption algorithm depth definition (ec -> prime256v1 or prime384v1 or prime521v1, rsa -> 3072 or 4096 or 8192).                    |
-|                       | PKI_KEY_PASSWORD                      | necessary     | Encryption password of the key.                                                                                                       |
+|                       | PKI_KEY_INPUT_PASSWORD                | necessary     | Encryption password of the key. Can be plaintext input or a path to an one-line file containing the password.                         |
 |                       | PKI_REQ_HASH                          | necessary     | Hash algorithm to use for the request (sha256 or sha384 or sha512 or sha512-256 or sha3-256 or sha3-384 or sha3-512).                 |
 |                       | PKI_REQ_COUNTRY                       | necessary     | Country name for the request subject consisting of 2 capital letters.                                                                 |
 |                       | PKI_REQ_STATE                         | necessary     | State name for the request subject consisting of 2 up to 32 letters.                                                                  |
@@ -101,10 +101,10 @@ export PKI_SCRIPT_OUTPUT=1
 | key_create            | PKI_KEY_OUTPUT_FILE                   | necessary     | Full filepath of the key file to write.                                                                                               |
 |                       | PKI_KEY_ALGORITHM                     | necessary     | Encryption algorithm 'ec', 'rsa' or 'ed25519'.                                                                                        |
 |                       | PKI_KEY_ENCRYPTION                    | necessary     | Encryption algorithm depth definition (ec -> prime256v1 or prime384v1 or prime521v1, rsa -> 3072 or 4096 or 8192).                    |
-|                       | PKI_KEY_PASSWORD                      | necessary     | Encryption password of the key.                                                                                                       |
+|                       | PKI_KEY_INPUT_PASSWORD                | necessary     | Encryption password of the key. Can be plaintext input or a path to an one-line file containing the password.                         |
 | req_create            | PKI_REQ_OUTPUT_FILE                   | necessary     | Full filepath of the request file to write.                                                                                           |
 |                       | PKI_KEY_INPUT_FILE                    | necessary     | Private key filepath.                                                                                                                 |
-|                       | PKI_KEY_INPUT_PASSWORD                | necessary     | Private key encryption password.                                                                                                      |
+|                       | PKI_KEY_INPUT_PASSWORD                | necessary     | Encryption password of the key. Can be plaintext input or a path to an one-line file containing the password.                         |
 |                       | PKI_REQ_HASH                          | necessary     | Hash algorithm to use for the request (sha256 or sha384 or sha512 or sha512-256 or sha3-256 or sha3-384 or sha3-512).                 |
 |                       | PKI_REQ_COUNTRY                       | necessary     | Country name for the request subject consisting of 2 capital letters.                                                                 |
 |                       | PKI_REQ_STATE                         | necessary     | State name for the request subject consisting of 2 up to 32 letters.                                                                  |
@@ -118,18 +118,18 @@ export PKI_SCRIPT_OUTPUT=1
 |                       | PKI_CERT_DURATION                     | necessary     | The duration of the certificate signing in valid format (1 up to 369 days / 1 up to 59 weeks / 1 up to 12 months / 1 up to 10 years). |
 |                       | PKI_REQ_INPUT_FILE                    | necessary     | Request filepath which needs to be signed.                                                                                            |
 |                       | PKI_KEY_INPUT_FILE                    | necessary     | Private key filepath.                                                                                                                 |
-|                       | PKI_KEY_INPUT_PASSWORD                | necessary     | Private key encryption password.                                                                                                      |
+|                       | PKI_KEY_INPUT_PASSWORD                | necessary     | Encryption password of the key. Can be plaintext input or a path to an one-line file containing the password.                         |
 |                       | PKI_CA_CONF_FILE                      | necessary     | Full filepath of the configuration file to read.                                                                                      |
 |                       | PKI_CA_EXTENSION                      | optional      | CA extension from the CA configuration file which should be used to sign the request. If not specified, request specification is used.|
 | cert_revoke           | PKI_CERT_SERIAL                       | necessary     | Certificate serial which should be used to revoke the certificate.                                                                    |
 |                       | PKI_KEY_INPUT_FILE                    | necessary     | Private key filepath.                                                                                                                 |
-|                       | PKI_KEY_INPUT_PASSWORD                | necessary     | Private key encryption password.                                                                                                      |
+|                       | PKI_KEY_INPUT_PASSWORD                | necessary     | Encryption password of the key. Can be plaintext input or a path to an one-line file containing the password.                         |
 |                       | PKI_CA_CONF_FILE                      | necessary     | Full filepath of the configuration file to read.                                                                                      |
 |                       | PKI_CERT_REVOKE_REASON                | necessary     | Revoke reason of the certificate (e.g. keyCompromise, CACompromise, superseded).                                                      |
 | crl_create            | PKI_CRL_OUTPUT_FILE                   | necessary     | Full filepath of the CRL file to write.                                                                                               |
 |                       | PKI_KEY_INPUT_FILE                    | optional      | Private key filepath. Needs to be specified when 'PKI_CERT_INPUT_FILE' is used. Otherwise the CA configuration entries are used.      |
 |                       | PKI_CERT_INPUT_FILE                   | optional      | Certificate filepath. Needs to be specified when 'PKI_CERT_INPUT_FILE' is used. Otherwise the CA configuration entries are used.      |
-|                       | PKI_KEY_INPUT_PASSWORD                | necessary     | Private key encryption password.                                                                                                      |
+|                       | PKI_KEY_INPUT_PASSWORD                | necessary     | Encryption password of the key. Can be plaintext input or a path to an one-line file containing the password.                         |
 |                       | PKI_CA_CONF_FILE                      | necessary     | Full filepath of the configuration file to read.                                                                                      |
 |                       | PKI_CRL_DURATION                      | optional      | The duration of the CRL in valid format (1 up to 369 days / 1 up to 59 weeks / 1 up to 12 months / 1 up to 10 years).                 |
 | crl_buffer            | PKI_CRL_OUTPUT_FILE                   | necessary     | Full filepath of the CRL file to write the buffer file                                                                                |
@@ -141,10 +141,10 @@ export PKI_SCRIPT_OUTPUT=1
 #### Syntax Examples
 
 ```
-pki.sh ca_create "PKI_CA_OUTPUT_PATH=/tmp/ca:::PKI_CA_NAME=test:::PKI_CA_ROOT=1:::PKI_CA_BASE_URI=http://pki.test:::PKI_CA_POLICY=1.1.1.1:::PKI_CA_CERT_POLICY=1.1.1.1.2:::PKI_KEY_ALGORITHM=ed25519:::PKI_KEY_PASSWORD=Test1234:::PKI_REQ_HASH=sha512:::PKI_REQ_COUNTRY=US:::PKI_REQ_STATE=California:::PKI_REQ_LOCATION=LA:::PKI_REQ_ORGANIZATION=Test:::PKI_REQ_ORGANIZATIONUNIT=TestSub:::PKI_REQ_COMMONNAME=Test CA:::PKI_REQ_EXTENDED_KEY_USAGE=critical, serverAuth, clientAuth, OCSPSigning:::PKI_CERT_DURATION=10 years"
+pki.sh ca_create "PKI_CA_OUTPUT_PATH=/tmp/ca:::PKI_CA_NAME=test:::PKI_CA_ROOT=1:::PKI_CA_BASE_URI=http://pki.test:::PKI_CA_POLICY=1.1.1.1:::PKI_CA_CERT_POLICY=1.1.1.1.2:::PKI_KEY_ALGORITHM=ed25519:::PKI_KEY_INPUT_PASSWORD=Test1234:::PKI_REQ_HASH=sha512:::PKI_REQ_COUNTRY=US:::PKI_REQ_STATE=California:::PKI_REQ_LOCATION=LA:::PKI_REQ_ORGANIZATION=Test:::PKI_REQ_ORGANIZATIONUNIT=TestSub:::PKI_REQ_COMMONNAME=Test CA:::PKI_REQ_EXTENDED_KEY_USAGE=critical, serverAuth, clientAuth, OCSPSigning:::PKI_CERT_DURATION=10 years"
 ```
 ```
-pki.sh key_create "PKI_KEY_OUTPUT_FILE=/tmp/test.key:::PKI_KEY_ALGORITHM=rsa:::PKI_KEY_ENCRYPTION=rsa4096:::PKI_KEY_PASSWORD=Test1234"
+pki.sh key_create "PKI_KEY_OUTPUT_FILE=/tmp/test.key:::PKI_KEY_ALGORITHM=rsa:::PKI_KEY_ENCRYPTION=rsa4096:::PKI_KEY_INPUT_PASSWORD=Test1234"
 ```
 ```
 pki.sh req_create "PKI_REQ_OUTPUT_FILE=/tmp/test.req:::PKI_KEY_INPUT_FILE=/tmp/test.key:::PKI_KEY_INPUT_PASSWORD=Test1234:::PKI_REQ_HASH=sha256:::PKI_REQ_COUNTRY=US:::PKI_REQ_STATE=California:::PKI_REQ_LOCATION=LA:::PKI_REQ_ORGANIZATION=Test:::PKI_REQ_ORGANIZATIONUNIT=TestSub:::PKI_REQ_COMMONNAME=test.cert:::PKI_REQ_KEY_USAGE=critical, digitalSignature, cRLSign, keyCertSign:::PKI_REQ_ALTERNATE_NAME=IP.1:127.0.0.1"
