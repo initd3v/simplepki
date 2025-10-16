@@ -783,7 +783,7 @@ function f_cert_set() {
         return ${TMP_FALSE}
     fi
     
-    if [ "${PKI_CA_CONF_FILE}x" != "x" ] && [ "${PKI_CA_ROOT}x" == "1x" ] ; then
+    if [ "${PKI_CA_CONF_FILE}x" == "x" ] && [ "${PKI_CA_ROOT}x" != "1x" ] ; then
         ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [Either the CA configuration file path at variable 'PKI_CA_CONF_FILE' or the CA root indicator 'PKI_CA_ROOT=1' must be set. ]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
         return ${TMP_FALSE}
     fi
@@ -1834,6 +1834,11 @@ function f_pkcs12_set() {
         exit ${TMP_FALSE}
     fi
 
+    if [ -f "${PKI_CERT_INPUT_FILE}.pfx" ] ; then
+        ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The PKCS#12 output file '${PKI_CERT_INPUT_FILE}.pfx' aready exist. Overriding existent files is not supported.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
+        exit ${TMP_FALSE}
+    fi
+
     ${CMD_OPENSSL} pkcs12 -export -inkey "${PKI_KEY_INPUT_FILE}" -in "${PKI_CERT_INPUT_FILE}" -passin "${PKI_KEY_INPUT_PASSWORD_PREFIX}":"${PKI_KEY_INPUT_PASSWORD}" -out "${PKI_CERT_INPUT_FILE}.pfx" 2>/dev/null
 
     if [ $? -eq ${TMP_TRUE} ] && [ -f "${PKI_CERT_INPUT_FILE}.pfx" ] ; then
@@ -1898,7 +1903,7 @@ case "${1}" in
         f_pkcs12_set
         ;;
     *)
-        ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} -d 'now' -u +"%Y%m%d%H%M%SZ" )] [The PKI script option '${1}' is not a valid one. Please use one of the following options:\n\tca_create\t: Create a new root or intermediate CA.\n\tcert_create\t: Sign a certificate with a existent CA.\n\tcert_revoke\t: Revoke a certificate from a existent CA.\n\tcrl_create\t: Create a CRL for a existent CA.\n\t crl_buffer\t: Copy a CRL from a existent CA to another file.\n\tkey_create\t: Create a new private key for a certificate or request.\n\treq_create\t: Create a new request with a private key.\n\toverview_create\t: Create a basic CA overview with essential informations as a plain HTML file with Javascript and CSS.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
+        ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} -d 'now' -u +"%Y%m%d%H%M%SZ" )] [The PKI script option '${1}' is not a valid one. Please use one of the following options:\n\tca_create\t: Create a new root or intermediate CA.\n\tcert_create\t: Sign a certificate with a existent CA.\n\tcert_revoke\t: Revoke a certificate from a existent CA.\n\tcrl_create\t: Create a CRL for a existent CA.\n\tcrl_buffer\t: Copy a CRL from a existent CA to another file.\n\tkey_create\t: Create a new private key for a certificate or request.\n\treq_create\t: Create a new request with a private key.\n\toverview_create\t: Create a basic CA overview with essential informations as a plain HTML file with Javascript and CSS.\n\tpkcs12_create\t: Create a PKCS#12 file from a private key and the corresponding certificate file.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
         ;;
 esac
 
