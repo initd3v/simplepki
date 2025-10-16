@@ -147,45 +147,45 @@ export PKI_SCRIPT_OUTPUT=1
 
 ```
 # Create a self-signed root CA structure
-./pki.sh ca_create "PKI_CA_OUTPUT_PATH=/tmp/ca:::PKI_CA_NAME=caroot:::PKI_CA_ROOT=1:::PKI_CA_BASE_URI=http://pki.test:::PKI_CA_POLICY=1.1.1.1:::PKI_CA_CERT_POLICY=1.1.1.1.2:::PKI_KEY_ALGORITHM=ed25519:::PKI_KEY_INPUT_PASSWORD=Test1234:::PKI_REQ_HASH=sha512:::PKI_REQ_COUNTRY=US:::PKI_REQ_STATE=California:::PKI_REQ_LOCATION=LA:::PKI_REQ_ORGANIZATION=Test:::PKI_REQ_ORGANIZATIONUNIT=TestSub:::PKI_REQ_COMMONNAME=Test Root CA:::PKI_REQ_EXTENDED_KEY_USAGE=critical, serverAuth, clientAuth, OCSPSigning:::PKI_CERT_DURATION=10 years"
+./pki.sh ca_create "PKI_CA_OUTPUT_PATH=/tmp:::PKI_CA_NAME=caroot:::PKI_CA_ROOT=1:::PKI_CA_BASE_URI=http://pki.test:::PKI_CA_POLICY=1.1.1.1:::PKI_CA_CERT_POLICY=1.1.1.1.2:::PKI_KEY_ALGORITHM=ed25519:::PKI_KEY_INPUT_PASSWORD=Test1234:::PKI_REQ_HASH=sha512:::PKI_REQ_COUNTRY=US:::PKI_REQ_STATE=California:::PKI_REQ_LOCATION=LA:::PKI_REQ_ORGANIZATION=Test:::PKI_REQ_ORGANIZATIONUNIT=TestSub:::PKI_REQ_COMMONNAME=Test Root CA:::PKI_REQ_EXTENDED_KEY_USAGE=critical, serverAuth, clientAuth, OCSPSigning:::PKI_CERT_DURATION=10 years"
 ```
 ```
 # Create a intermediate structure and request
-./pki.sh ca_create "PKI_CA_OUTPUT_PATH=/tmp/ca:::PKI_CA_NAME=caintermediate:::PKI_CA_ROOT=0:::PKI_CA_BASE_URI=http://pki.test:::PKI_CA_POLICY=1.1.1.2:::PKI_CA_CERT_POLICY=1.1.1.1.3:::PKI_KEY_ALGORITHM=ed25519:::PKI_KEY_INPUT_PASSWORD=Test1234:::PKI_REQ_HASH=sha512:::PKI_REQ_COUNTRY=DE:::PKI_REQ_STATE=Thueringen:::PKI_REQ_LOCATION=Erfurt:::PKI_REQ_ORGANIZATION=Home:::PKI_REQ_ORGANIZATIONUNIT=Home2:::PKI_REQ_COMMONNAME=Test Intermediate CA:::PKI_REQ_KEY_USAGE=critical, digitalSignature, cRLSign, keyCertSign:::PKI_CERT_DURATION=10 years"
+./pki.sh ca_create "PKI_CA_OUTPUT_PATH=/tmp:::PKI_CA_NAME=caintermediate:::PKI_CA_ROOT=0:::PKI_CA_BASE_URI=http://pki.test:::PKI_CA_POLICY=1.1.1.2:::PKI_CA_CERT_POLICY=1.1.1.1.3:::PKI_KEY_ALGORITHM=ed25519:::PKI_KEY_INPUT_PASSWORD=Test1234:::PKI_REQ_HASH=sha512:::PKI_REQ_COUNTRY=DE:::PKI_REQ_STATE=Thueringen:::PKI_REQ_LOCATION=Erfurt:::PKI_REQ_ORGANIZATION=Home:::PKI_REQ_ORGANIZATIONUNIT=Home2:::PKI_REQ_COMMONNAME=Test Intermediate CA:::PKI_REQ_KEY_USAGE=critical, digitalSignature, cRLSign, keyCertSign:::PKI_CERT_DURATION=10 years"
 ```
 ```
 # Sign a intermediate CA from root CA
-./pki.sh cert_create "PKI_CERT_OUTPUT_FILE=/tmp/ca/caintermediate/public/caintermediate.cer:::PKI_CERT_DURATION=10 years:::PKI_REQ_INPUT_FILE=/tmp/ca/caintermediate/.private/caintermediate.req:::PKI_KEY_INPUT_FILE=/tmp/ca/caroot/.private/caroot.key:::PKI_KEY_INPUT_PASSWORD=Test1234:::PKI_CA_CONF_FILE=/tmp/ca/caroot/.private/caroot.conf:::PKI_CA_EXTENSION=v3_intermediate_ca"
+./pki.sh cert_create "PKI_CERT_OUTPUT_FILE=/tmp/caintermediate/public/caintermediate.cer:::PKI_CERT_DURATION=10 years:::PKI_REQ_INPUT_FILE=/tmp/caintermediate/.private/caintermediate.req:::PKI_KEY_INPUT_FILE=/tmp/caroot/.private/caroot.key:::PKI_KEY_INPUT_PASSWORD=Test1234:::PKI_CA_CONF_FILE=/tmp/caroot/.private/caroot.conf:::PKI_CA_EXTENSION=v3_intermediate_ca"
 ```
 ```
 # Create a private for a certificate
-pki.sh key_create "PKI_KEY_OUTPUT_FILE=/tmp/testcer.key:::PKI_KEY_ALGORITHM=rsa:::PKI_KEY_ENCRYPTION=rsa4096:::PKI_KEY_INPUT_PASSWORD=Test1234"
+./pki.sh key_create "PKI_KEY_OUTPUT_FILE=/tmp/testcer.key:::PKI_KEY_ALGORITHM=rsa:::PKI_KEY_ENCRYPTION=rsa4096:::PKI_KEY_INPUT_PASSWORD=Test1234"
 ```
 ```
 # Create a certificate request from a private key
-pki.sh req_create "PKI_REQ_OUTPUT_FILE=/tmp/testcer.req:::PKI_KEY_INPUT_FILE=/tmp/testcer.key:::PKI_KEY_INPUT_PASSWORD=Test1234:::PKI_REQ_HASH=sha256:::PKI_REQ_COUNTRY=US:::PKI_REQ_STATE=California:::PKI_REQ_LOCATION=LA:::PKI_REQ_ORGANIZATION=Test:::PKI_REQ_ORGANIZATIONUNIT=TestSub:::PKI_REQ_COMMONNAME=testcer.cert:::PKI_REQ_KEY_USAGE=critical, digitalSignature, cRLSign, keyCertSign:::PKI_REQ_ALTERNATE_NAME=IP.1:127.0.0.1"
+./pki.sh req_create "PKI_REQ_OUTPUT_FILE=/tmp/testcer.req:::PKI_KEY_INPUT_FILE=/tmp/testcer.key:::PKI_KEY_INPUT_PASSWORD=Test1234:::PKI_REQ_HASH=sha256:::PKI_REQ_COUNTRY=US:::PKI_REQ_STATE=California:::PKI_REQ_LOCATION=LA:::PKI_REQ_ORGANIZATION=Test:::PKI_REQ_ORGANIZATIONUNIT=TestSub:::PKI_REQ_COMMONNAME=testcer.cert:::PKI_REQ_KEY_USAGE=critical, digitalSignature, cRLSign, keyCertSign:::PKI_REQ_ALTERNATE_NAME=IP.1:127.0.0.1"
 ```
 ```
 # Sign an end certificate
-./pki.sh cert_create "PKI_CERT_OUTPUT_FILE=/tmp/testcer.cer:::PKI_CERT_DURATION=1 years:::PKI_REQ_INPUT_FILE=/tmp/testcer.req:::PKI_KEY_INPUT_FILE=/tmp/ca/caintermediate/.private/caintermediate.key:::PKI_KEY_INPUT_PASSWORD=Test1234:::PKI_CA_CONF_FILE=/tmp/ca/caintermediate/.private/caintermediate.conf:::PKI_CA_EXTENSION=cert_server_auth"
+./pki.sh cert_create "PKI_CERT_OUTPUT_FILE=/tmp/testcer.cer:::PKI_CERT_DURATION=1 years:::PKI_REQ_INPUT_FILE=/tmp/testcer.req:::PKI_KEY_INPUT_FILE=/tmp/caintermediate/.private/caintermediate.key:::PKI_KEY_INPUT_PASSWORD=Test1234:::PKI_CA_CONF_FILE=/tmp/caintermediate/.private/caintermediate.conf:::PKI_CA_EXTENSION=cert_server_auth"
 ```
 ```
 # Revoke a Certificate
-pki.sh cert_revoke "PKI_CERT_SERIAL=111111111111111111111111111111111:::PKI_KEY_INPUT_FILE=/tmp/ca/caintermediate/.private/caintermediate.key:::PKI_KEY_INPUT_PASSWORD=Test1234:::PKI_CA_CONF_FILE=/tmp/ca/caintermediate/.private/caintermediate.conf:::PKI_CERT_REVOKE_REASON=superseded"
+./pki.sh cert_revoke "PKI_CERT_SERIAL=111111111111111111111111111111111:::PKI_KEY_INPUT_FILE=/tmp/caintermediate/.private/caintermediate.key:::PKI_KEY_INPUT_PASSWORD=Test1234:::PKI_CA_CONF_FILE=/tmp/caintermediate/.private/caintermediate.conf:::PKI_CERT_REVOKE_REASON=superseded"
 ```
 ```
 # Create a CRL
-pki.sh crl_create "PKI_CRL_OUTPUT_FILE=/tmp/ca/caintermediate/signing/crls/caintermediate.crl:::PKI_KEY_INPUT_FILE=/tmp/ca/caintermediate/.private/caintermediate.key:::PKI_KEY_INPUT_PASSWORD=Test1234:::PKI_CA_CONF_FILE=/tmp/ca/caintermediate/.private/caintermediate.conf:::PKI_CRL_DURATION=7 days"
+./pki.sh crl_create "PKI_CRL_OUTPUT_FILE=/tmp/caintermediate/signing/crls/caintermediate.crl:::PKI_KEY_INPUT_FILE=/tmp/caintermediate/.private/caintermediate.key:::PKI_KEY_INPUT_PASSWORD=Test1234:::PKI_CA_CONF_FILE=/tmp/caintermediate/.private/caintermediate.conf:::PKI_CRL_DURATION=7 days"
 ```
 ```
 # Buffer CRL to another path
-pki.sh crl_buffer "PKI_CRL_OUTPUT_PATH=/tmp:::PKI_CRL_INPUT_FILE=/tmp/ca/caintermediate/signing/crls/caintermediate.crl"
+./pki.sh crl_buffer "PKI_CRL_OUTPUT_PATH=/tmp:::PKI_CRL_INPUT_FILE=/tmp/caintermediate/signing/crls/caintermediate.crl"
 ```
 ```
 # Create a HTML overview for root and intermdiate CA 
-pki.sh overview_create "PKI_CA_OVERVIEW_INPUT_CONF_FILE=/tmp/ca/caroot/.private/caroot.conf, /tmp/ca/caintermediate/.private/caintermediate.conf:::PKI_CA_OVERVIEW_OUTPUT_PATH=/tmp"
+./pki.sh overview_create "PKI_CA_OVERVIEW_INPUT_CONF_FILE=/tmp/caroot/.private/caroot.conf, /tmp/caintermediate/.private/caintermediate.conf:::PKI_CA_OVERVIEW_OUTPUT_PATH=/tmp"
 ```
 ```
 # Create a PKCS#12 file from a private key and corresponding certificate
-pki.sh pkcs12_create "PKI_KEY_INPUT_FILE=/tmp/ca/caintermediate/.private/caintermediate.key:::PKI_KEY_INPUT_PASSWORD=Test1234:::PKI_CERT_INPUT_FILE=/tmp/ca/caintermediate/public/caintermediate.cer"
+./pki.sh pkcs12_create "PKI_KEY_INPUT_FILE=/tmp/caintermediate/.private/caintermediate.key:::PKI_KEY_INPUT_PASSWORD=Test1234:::PKI_CERT_INPUT_FILE=/tmp/caintermediate/public/caintermediate.cer"
 ```
