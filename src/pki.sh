@@ -312,7 +312,7 @@ function f_parameter_verify() {
             IFS=', '
             for i in ${2} ; do
                 if [[ ! "${i}" =~ ^(critical|digitalSignature|nonRepudiation|keyEncipherment|dataEncipherment|keyAgreement|keyCertSign|cRLSign|encipherOnly|decipherOnly)$ ]] ; then
-                    ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The passed extended key usage value '${i}' in variable 'PKI_REQ_EXTENDED_KEY_USAGE' seems not to be a valid value. Please ensure you use 'critical', 'serverAuth', 'clientAuth', 'codeSigning', 'emailProtection', 'timeStamping', 'OCSPSigning', 'ipsecIKE', 'msCodeInd', 'msCodeCom', 'msCTLSign'or 'msEFS' divided by ', ' for multiple values.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
+                    ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The passed extended key usage value '${i}' in variable 'PKI_REQ_EXTENDED_KEY_USAGE' seems not to be a valid value. Please ensure you use 'critical', 'digitalSignature', 'nonRepudiation', 'keyEncipherment', 'dataEncipherment', 'keyAgreement', 'keyCertSign', 'cRLSign', 'encipherOnly' or 'decipherOnly' divided by ', ' for multiple values.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
                 exit ${TMP_FALSE}
                 fi
             done
