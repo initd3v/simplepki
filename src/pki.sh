@@ -1234,7 +1234,7 @@ function f_crl_set() {
         fi
 
         if [ "${PKI_KEY_INPUT_FILE}x" != "x" ] && [ "${PKI_CERT_INPUT_FILE}x" != "x" ] ; then
-            ${CMD_OPENSSL} ca -config "${PKI_CA_CONF_FILE}" -keyfile "${PKI_KEY_INPUT_FILE}" -cert "${PKI_CERT_INPUT_FILE}" -passin "${PKI_KEY_INPUT_PASSWORD_PREFIX}":"${PKI_KEY_INPUT_PASSWORD}" -rand_serial -rand "/tmp/${TMP_TIME}_RANDFILE" -crl_lastupdate "${TMP_CRL_STARTDATE}" -crl_nextupdate "${TMP_CRL_ENDDATE}" -gencrl -out "${PKI_CRL_OUTPUT_FILE}"
+            ${CMD_OPENSSL} ca -config "${PKI_CA_CONF_FILE}" -keyfile "${PKI_KEY_INPUT_FILE}" -cert "${PKI_CERT_INPUT_FILE}" -passin "${PKI_KEY_INPUT_PASSWORD_PREFIX}":"${PKI_KEY_INPUT_PASSWORD}" -rand_serial -rand "/tmp/${TMP_TIME}_RANDFILE" -crl_lastupdate "${TMP_CRL_STARTDATE}" -crl_nextupdate "${TMP_CRL_ENDDATE}" -gencrl -out "${PKI_CRL_OUTPUT_FILE}" 2>/dev/null
         else
             ${CMD_OPENSSL} ca -config "${PKI_CA_CONF_FILE}" -passin "${PKI_KEY_INPUT_PASSWORD_PREFIX}":"${PKI_KEY_INPUT_PASSWORD}" -rand_serial -rand "/tmp/${TMP_TIME}_RANDFILE" -crl_lastupdate "${TMP_CRL_STARTDATE}" -crl_nextupdate "${TMP_CRL_ENDDATE}" -gencrl -out "${PKI_CRL_OUTPUT_FILE}" 2>/dev/null
         fi
@@ -1662,10 +1662,11 @@ function f_overview_set() {
             TMP_CA_CONF_CRL_END=$( ${CMD_OPENSSL} crl -in "${TMP_CA_CONF_CRL}" -text -noout 2>/dev/null | ${CMD_GREP} "Next Update" | ${CMD_AWK} -F ': ' '{ print $2 }' )
 
             TMP_OVERVIEW_CRL_CHECK_DATE=$(( ($(date --date="${TMP_CA_CONF_CRL_END}" +%s) - $(date --date="now" +%s) )/(60*60*24) ))
+            TMP_OVERVIEW_CRL_CHECK_DATE_HOURS=$(( ($(date --date="${TMP_CA_CONF_CRL_END}" +%s) - $(date --date="now" +%s) )/(60*60) ))
 
             TMP_OVERVIEW_OUTPUT+='          <div class="ca_content_info_ca">'$'\n'
             TMP_OVERVIEW_OUTPUT+='              <h3>'$'\n'
-            TMP_OVERVIEW_OUTPUT+='                  CA CRL Information'$'\n'
+            TMP_OVERVIEW_OUTPUT+="                  CA CRL Information ($( if [ "${TMP_OVERVIEW_CRL_CHECK_DATE}x" == "x" ] || [ "${TMP_OVERVIEW_CRL_CHECK_DATE_HOURS}x" == "x" ] ; then ${CMD_ECHO} "?" ; elif [ ${TMP_OVERVIEW_CRL_CHECK_DATE} -gt 0 ] ; then ${CMD_ECHO} "${TMP_OVERVIEW_CRL_CHECK_DATE} days" ; elif [ ${TMP_OVERVIEW_CRL_CHECK_DATE} -le 0 ] && [ ${TMP_OVERVIEW_CRL_CHECK_DATE_HOURS} -gt 0 ]  ; then ${CMD_ECHO} "${TMP_OVERVIEW_CRL_CHECK_DATE_HOURS} hours" ; else ${CMD_ECHO} "0 hours" ; fi ) remaining)"$'\n'
             TMP_OVERVIEW_OUTPUT+='              </h3>'$'\n'
             TMP_OVERVIEW_OUTPUT+='              <table style="width:100%">'$'\n'
             TMP_OVERVIEW_OUTPUT+='                  <tr>'$'\n'
