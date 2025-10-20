@@ -217,7 +217,7 @@ function f_parameter_verify() {
             ;;
         "PKI_CA_BASE_URI")
             if [[ ! "${2}" =~ ^http(|s): ]] ; then 
-                ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The passed CA base URI '${2}' in variable 'PKI_CA_BASE_URI' does not to be a valid URI. Please check it as it is used for certificate and CRL publishing default in the basic configuration file.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
+                ${CMD_ECHO} -e "${TMP_OUTPUcertificateT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The passed CA base URI '${2}' in variable 'PKI_CA_BASE_URI' does not to be a valid URI. Please check it as it is used for certificate and CRL publishing default in the basic configuration file.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
                 exit ${TMP_FALSE}
             fi
             ;;
@@ -234,7 +234,7 @@ function f_parameter_verify() {
             fi
             ;;
         "PKI_KEY_INPUT_FILE")
-            if [ ! -f "${2}" ] || [ ! -r "${2}" ] ; then
+            if ( [ ! -f "${2}" ] && [ ! -L "${2}" ] ) || [ ! -r "${2}" ] ; then
                 ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The passed key file '${2}' in variable 'PKI_KEY_INPUT_FILE' must be an existent and by the current user readable regular file.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
                 exit ${TMP_FALSE}
             fi
@@ -710,6 +710,9 @@ function f_req_set() {
     ${CMD_ECHO} "L=${PKI_REQ_LOCATION}" >> "${PKI_REQ_OUTPUT_FILE}.conf"
     ${CMD_ECHO} "O=${PKI_REQ_ORGANIZATION}" >> "${PKI_REQ_OUTPUT_FILE}.conf"
     ${CMD_ECHO} "1.OU=${PKI_REQ_ORGANIZATIONUNIT}" >> "${PKI_REQ_OUTPUT_FILE}.conf"
+    if [ "${PKI_REQ_EMAIL}x" != "x" ] ; then
+       ${CMD_ECHO} "emailAddres=${PKI_REQ_EMAIL}" >> "${PKI_REQ_OUTPUT_FILE}.conf"
+    fi
     ${CMD_ECHO} "CN=${PKI_REQ_COMMONNAME}" >> "${PKI_REQ_OUTPUT_FILE}.conf"
     ${CMD_ECHO} "[ req_cert_extensions ]" >> "${PKI_REQ_OUTPUT_FILE}.conf"
     if [ "${PKI_CA_ROOT}x" == "x" ] ; then
@@ -1279,13 +1282,13 @@ function f_cert_unset() {
         exit ${TMP_FALSE}
     fi
 
-    TMP_CA_CONF_DIR=$( ${CMD_GREP} --extended-regexp "^dir.*=.*$" < "${PKI_CA_CONF_FILE}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_XARGS} )
+    TMP_CA_CONF_DIR=$( ${CMD_GREP} --extended-regexp "^dir\s+=\s+.*$" < "${PKI_CA_CONF_FILE}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_XARGS} )
     if [ "${TMP_CA_CONF_DIR}x" == "x" ] || [ ! -d "${TMP_CA_CONF_DIR}" ] ; then
         ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The CA configuration variable 'dir' from CA configration file '${PKI_CA_CONF_FILE}' and value '${TMP_CA_CONF_DIR}' could not be extracted to a valid directory path.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
         exit ${TMP_FALSE}
     fi
 
-    TMP_CA_CONF_CERTDIR=$( ${CMD_GREP} --extended-regexp "^new_certs_dir.*=.*$" "${PKI_CA_CONF_FILE}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_XARGS} )
+    TMP_CA_CONF_CERTDIR=$( ${CMD_GREP} --extended-regexp "^new_certs_dir\s+=\s+.*$" < "${PKI_CA_CONF_FILE}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_XARGS} )
     if [ "${TMP_CA_CONF_CERTDIR}x" == "x" ] ; then
         ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The CA configuration variable 'new_certs_dir' from CA configration file '${PKI_CA_CONF_FILE}' and value '${TMP_CA_CONF_CERTDIR}' could not be extracted]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
         exit ${TMP_FALSE}
@@ -1385,16 +1388,20 @@ function f_overview_set() {
     TMP_OVERVIEW_OUTPUT+='          text-align: left;'$'\n'
     TMP_OVERVIEW_OUTPUT+='      }'$'\n'
     TMP_OVERVIEW_OUTPUT+=''$'\n'
+    TMP_OVERVIEW_OUTPUT+=''$'\n'
+    TMP_OVERVIEW_OUTPUT+='      tr {'$'\n'
+    TMP_OVERVIEW_OUTPUT+='          border-radius: 2px;'$'\n'
+    TMP_OVERVIEW_OUTPUT+='      }'$'\n'
+    TMP_OVERVIEW_OUTPUT+=''$'\n'
     TMP_OVERVIEW_OUTPUT+='      #menu_tab {'$'\n'
     TMP_OVERVIEW_OUTPUT+='          overflow: hidden;'$'\n'
     TMP_OVERVIEW_OUTPUT+='          border-bottom: 1px solid #ededed;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          background-color: #cbdceb;'$'\n'
     TMP_OVERVIEW_OUTPUT+='          width: 100%;'$'\n'
     TMP_OVERVIEW_OUTPUT+='          min-height: 40px;'$'\n'
     TMP_OVERVIEW_OUTPUT+='      }'$'\n'
     TMP_OVERVIEW_OUTPUT+=''$'\n'
     TMP_OVERVIEW_OUTPUT+='      #menu_tab button {'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          background-color: inherit;'$'\n'
+    TMP_OVERVIEW_OUTPUT+='          background-color: #cbdceb;'$'\n'
     TMP_OVERVIEW_OUTPUT+='          float: left;'$'\n'
     TMP_OVERVIEW_OUTPUT+='          border: none;'$'\n'
     TMP_OVERVIEW_OUTPUT+='          outline: none;'$'\n'
@@ -1402,7 +1409,14 @@ function f_overview_set() {
     TMP_OVERVIEW_OUTPUT+='          padding: 14px 16px;'$'\n'
     TMP_OVERVIEW_OUTPUT+='          transition: 0.3s;'$'\n'
     TMP_OVERVIEW_OUTPUT+='          font-size: 17px;'$'\n'
-    TMP_OVERVIEW_OUTPUT+="          width: calc(100% / ${TMP_OVERVIEW_CA_COUNT});"$'\n'
+    TMP_OVERVIEW_OUTPUT+="          width: calc((100% / ${TMP_OVERVIEW_CA_COUNT}) - ((${TMP_OVERVIEW_CA_COUNT} - 1) * 20px));"$'\n'
+    TMP_OVERVIEW_OUTPUT+='          border-right: solid 1px;'$'\n'
+    TMP_OVERVIEW_OUTPUT+='          border-top: solid 1px;'$'\n'
+    TMP_OVERVIEW_OUTPUT+='          border-left: solid 1px;'$'\n'
+    TMP_OVERVIEW_OUTPUT+='          border-top-left-radius: 10px;'$'\n'
+    TMP_OVERVIEW_OUTPUT+='          border-top-right-radius: 10px;'$'\n'
+    TMP_OVERVIEW_OUTPUT+='          margin-right: 10px;'$'\n'
+    TMP_OVERVIEW_OUTPUT+='          margin-left: 10px;'$'\n'
     TMP_OVERVIEW_OUTPUT+='      }'$'\n'
     TMP_OVERVIEW_OUTPUT+=''$'\n'
     TMP_OVERVIEW_OUTPUT+='      #menu_tab button:hover {'$'\n'
@@ -1440,9 +1454,14 @@ function f_overview_set() {
     TMP_OVERVIEW_OUTPUT+='          border: solid 1px #ededed;'$'\n'
     TMP_OVERVIEW_OUTPUT+='      }'$'\n'
     TMP_OVERVIEW_OUTPUT+=''$'\n'
-    TMP_OVERVIEW_OUTPUT+='      #overall {'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          text-align: center;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          border: solid thin #000000;'$'\n'
+    TMP_OVERVIEW_OUTPUT+='      #status {'$'\n'
+    TMP_OVERVIEW_OUTPUT+='          padding: 10px;'$'\n'
+    TMP_OVERVIEW_OUTPUT+='          font-size: 20px;'$'\n'
+    TMP_OVERVIEW_OUTPUT+='      }'$'\n'
+    TMP_OVERVIEW_OUTPUT+=''$'\n'
+    TMP_OVERVIEW_OUTPUT+='      #status_value {'$'\n'
+    TMP_OVERVIEW_OUTPUT+='          font-weight: bolder;'$'\n'
+    TMP_OVERVIEW_OUTPUT+='          color: #9dd6ad;'$'\n'
     TMP_OVERVIEW_OUTPUT+='      }'$'\n'
     TMP_OVERVIEW_OUTPUT+=''$'\n'
     TMP_OVERVIEW_OUTPUT+='      #ca_content_divider {'$'\n'
@@ -1467,13 +1486,16 @@ function f_overview_set() {
     TMP_OVERVIEW_OUTPUT+='      }'$'\n'
     TMP_OVERVIEW_OUTPUT+=''$'\n'
     TMP_OVERVIEW_OUTPUT+='      .error {'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          background-color: #ffa4a9;'$'\n'
+    TMP_OVERVIEW_OUTPUT+='          background-color: #ffa4a9 !important;'$'\n'
     TMP_OVERVIEW_OUTPUT+='      }'$'\n'
     TMP_OVERVIEW_OUTPUT+=''
     TMP_OVERVIEW_OUTPUT+='      @media only screen and (max-width: 800px) {'$'\n'
     TMP_OVERVIEW_OUTPUT+='          /* For mobile phones: */'$'\n'
     TMP_OVERVIEW_OUTPUT+='          #menu_tab button {'$'\n'
     TMP_OVERVIEW_OUTPUT+='              width: 100%;'$'\n'
+    TMP_OVERVIEW_OUTPUT+='              border-top-left-radius: 0px;'$'\n'
+    TMP_OVERVIEW_OUTPUT+='              border-top-right-radius: 0px;'$'\n'
+    TMP_OVERVIEW_OUTPUT+='              border-style: none;'$'\n'
     TMP_OVERVIEW_OUTPUT+='          }'$'\n'
     TMP_OVERVIEW_OUTPUT+=''$'\n'
     TMP_OVERVIEW_OUTPUT+='          #ca_content_divider {'$'\n'
@@ -1486,7 +1508,15 @@ function f_overview_set() {
     TMP_OVERVIEW_OUTPUT+='      }'$'\n'
     TMP_OVERVIEW_OUTPUT+='  </style>'$'\n'
     TMP_OVERVIEW_OUTPUT+='  </head>'$'\n'
-    TMP_OVERVIEW_OUTPUT+='  <body>'$'\n'
+    TMP_OVERVIEW_OUTPUT+='  <body onload="set_error();">'$'\n'
+    TMP_OVERVIEW_OUTPUT+='      <div id="status">'$'\n'
+    TMP_OVERVIEW_OUTPUT+='          <p>'$'\n'
+    TMP_OVERVIEW_OUTPUT+="              Date generated: $( ${CMD_DATE} --date 'now' --utc +"%a %b %e %Y %X GMT")"$'\n'
+    TMP_OVERVIEW_OUTPUT+='          </p>'$'\n'
+    TMP_OVERVIEW_OUTPUT+='          <p id=status_value>'$'\n'
+    TMP_OVERVIEW_OUTPUT+="              Status: OK"$'\n'
+    TMP_OVERVIEW_OUTPUT+='          </p>'$'\n'
+    TMP_OVERVIEW_OUTPUT+='      </div>'$'\n'
     TMP_OVERVIEW_OUTPUT+='      <div id="menu_tab">'$'\n'
 
     TMP_IFS=${IFS}
@@ -1496,7 +1526,7 @@ function f_overview_set() {
         TMP_CA_CONF_CERTIFICATE=$( ${CMD_GREP} --extended-regexp "^certificate(\ .*=|=).*$" "${i}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_XARGS} )
 
         if [[ "${TMP_CA_CONF_CERTIFICATE}" =~ ^\$dir.*$ ]] ; then
-            TMP_CA_CONF_DIR=$( ${CMD_GREP} --extended-regexp "^dir(\ .*=|=).*$" < "${i}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_XARGS} )
+            TMP_CA_CONF_DIR=$( ${CMD_GREP} --extended-regexp "^dir\s+=\s+.*$" < "${i}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_XARGS} )
             TMP_CA_CONF_CERTIFICATE=$( ${CMD_AWK} -v dir="${TMP_CA_CONF_DIR}" -F '\\$dir' '{ print dir$2 }' <<< "${TMP_CA_CONF_CERTIFICATE}" )
         fi
         if [ "${TMP_CA_CONF_CERTIFICATE}x" == "x" ] || [ ! -f "${TMP_CA_CONF_CERTIFICATE}" ] ; then
@@ -1509,7 +1539,7 @@ function f_overview_set() {
             continue
         fi
 
-        TMP_OVERVIEW_OUTPUT+="          <button class=\"menu_tab_link\" onclick=\"set_menu(event, '${TMP_COUNTER}')\">${TMP_CA_CONF_CERTIFICATE_CN}</button>"$'\n'
+        TMP_OVERVIEW_OUTPUT+="          <button class=\"menu_tab_link\" id=\"menu_tab_${TMP_COUNTER}\" onclick=\"set_menu(event, '${TMP_COUNTER}')\">${TMP_CA_CONF_CERTIFICATE_CN}</button>"$'\n'
         TMP_COUNTER=$((TMP_COUNTER+1))
     done
 
@@ -1521,10 +1551,10 @@ function f_overview_set() {
         TMP_OVERVIEW_CA_CHECK_DATE=""
         TMP_OVERVIEW_CA_CHECK_NUMBER=""
 
-        TMP_CA_CONF_CERTIFICATE=$( ${CMD_GREP} --extended-regexp "^certificate(\ .*=|=).*$" "${i}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_XARGS} )
+        TMP_CA_CONF_CERTIFICATE=$( ${CMD_GREP} --extended-regexp "^certificate\s+=\s+.*$" < "${i}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_XARGS} )
 
         if [[ "${TMP_CA_CONF_CERTIFICATE}" =~ ^\$dir.*$ ]] ; then
-            TMP_CA_CONF_DIR=$( ${CMD_GREP} --extended-regexp "^dir(\ .*=|=).*$" < "${i}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_XARGS} )
+            TMP_CA_CONF_DIR=$( ${CMD_GREP} --extended-regexp "^dir\s+=\s+.*$" < "${i}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_XARGS} )
             TMP_CA_CONF_CERTIFICATE=$( ${CMD_AWK} -v dir="${TMP_CA_CONF_DIR}" -F '\\$dir' '{ print dir$2 }' <<< "${TMP_CA_CONF_CERTIFICATE}" )
         fi
 
@@ -1533,18 +1563,18 @@ function f_overview_set() {
             continue
         fi
 
-        TMP_CA_CONF_CRLDIR=$( ${CMD_GREP} --extended-regexp "^crl_dir(\ .*=|=).*$" "${i}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_XARGS} )
+        TMP_CA_CONF_CRLDIR=$( ${CMD_GREP} --extended-regexp "^crl_dir\s+=\s+.*$" < "${i}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_XARGS} )
 
         if [[ "${TMP_CA_CONF_CRLDIR}" =~ ^\$dir.*$ ]] ; then
-            TMP_CA_CONF_DIR=$( ${CMD_GREP} --extended-regexp "^dir(\ .*=|=).*$" < "${i}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_XARGS} )
+            TMP_CA_CONF_DIR=$( ${CMD_GREP} --extended-regexp "^dir\s+=\s+.*$" < "${i}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_XARGS} )
             TMP_CA_CONF_CRLDIR=$( ${CMD_AWK} -v dir="${TMP_CA_CONF_DIR}" -F '\\$dir' '{ print dir$2 }' <<< "${TMP_CA_CONF_CRLDIR}" )
         fi
 
 
-        TMP_CA_CONF_CRL=$( ${CMD_GREP} --extended-regexp "^crl(\ .*=|=).*$" "${i}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_XARGS} )
+        TMP_CA_CONF_CRL=$( ${CMD_GREP} --extended-regexp "^crl\s+=\s+.*$" < "${i}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_XARGS} )
 
         if [[ "${TMP_CA_CONF_CRL}" =~ ^\$dir.*$ ]] ; then
-            TMP_CA_CONF_DIR=$( ${CMD_GREP} --extended-regexp "^dir(\ .*=|=).*$" < "${i}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_XARGS} )
+            TMP_CA_CONF_DIR=$( ${CMD_GREP} --extended-regexp "^dir\s+=\s+.*$" < "${i}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_XARGS} )
             TMP_CA_CONF_CRL=$( ${CMD_AWK} -v dir="${TMP_CA_CONF_DIR}" -F '\\$dir' '{ print dir$2 }' <<< "${TMP_CA_CONF_CRL}" )
         fi
 
@@ -1552,9 +1582,9 @@ function f_overview_set() {
             TMP_CA_CONF_CRL=$( ${CMD_AWK} -v dir="${TMP_CA_CONF_CRLDIR}" -F '\\$crl_dir' '{ print dir$2 }' <<< "${TMP_CA_CONF_CRL}" )
         fi
 
-        TMP_CA_CONF_CERTDB=$( ${CMD_GREP} --extended-regexp "^database(\ .*=|=).*$" "${i}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_XARGS} )
+        TMP_CA_CONF_CERTDB=$( ${CMD_GREP} --extended-regexp "^database\s+=\s+.*$" < "${i}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_XARGS} )
         if [[ "${TMP_CA_CONF_CERTDB}" =~ ^\$dir.*$ ]] ; then
-            TMP_CA_CONF_DIR=$( ${CMD_GREP} --extended-regexp "^dir(\ .*=|=).*$" < "${i}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_XARGS} )
+            TMP_CA_CONF_DIR=$( ${CMD_GREP} --extended-regexp "^dir\s+=\s+.*$" < "${i}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_XARGS} )
             TMP_CA_CONF_CERTDB=$( ${CMD_AWK} -v dir="${TMP_CA_CONF_DIR}" -F '\\$dir' '{ print dir$2 }' <<< "${TMP_CA_CONF_CERTDB}" )
         fi
 
@@ -1563,9 +1593,9 @@ function f_overview_set() {
             continue
         fi
 
-        TMP_CA_CONF_NEWCERTS=$( ${CMD_GREP} --extended-regexp "^new_certs_dir(\ .*=|=).*$" "${i}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_XARGS} )
+        TMP_CA_CONF_NEWCERTS=$( ${CMD_GREP} --extended-regexp "^new_certs_dir\s+=\s+.*$" < "${i}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_XARGS} )
         if [[ "${TMP_CA_CONF_NEWCERTS}" =~ ^\$dir.*$ ]] ; then
-            TMP_CA_CONF_DIR=$( ${CMD_GREP} --extended-regexp "^dir(\ .*=|=).*$" < "${i}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_XARGS} )
+            TMP_CA_CONF_DIR=$( ${CMD_GREP} --extended-regexp "^dir\s+=\s+.*$" < "${i}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_XARGS} )
             TMP_CA_CONF_NEWCERTS=$( ${CMD_AWK} -v dir="${TMP_CA_CONF_DIR}" -F '\\$dir' '{ print dir$2 }' <<< "${TMP_CA_CONF_NEWCERTS}" )
         fi
 
@@ -1744,32 +1774,7 @@ function f_overview_set() {
         TMP_OVERVIEW_OUTPUT+='      </div>'$'\n'
     done
     IFS=${TMP_IFS}
-    # overall status
-
-    TMP_OVERVIEW_OVERALL_STATUS=$( ${CMD_GREP} 'class="error"' <<< "${TMP_OVERVIEW_OUTPUT}")
-    TMP_OVERVIEW_OUTPUT+="      <div id=\"ca_content_log\">"$'\n'
-    TMP_OVERVIEW_OUTPUT+='          <hr>'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          <h3>'$'\n'
-    TMP_OVERVIEW_OUTPUT+='              Overall Status'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          </h3>'$'\n'
-    if [ "$( ${CMD_GREP} 'class="error"' <<< \"${TMP_OVERVIEW_OUTPUT}\" )x" != "x" ] ; then
-        TMP_OVERVIEW_OUTPUT+='      <div id="overall" class="ca_content_info_ca error">'$'\n'
-        TMP_OVERVIEW_OUTPUT+='          <h3>'$'\n'
-        TMP_OVERVIEW_OUTPUT+='              ERROR'$'\n'
-        TMP_OVERVIEW_OUTPUT+='          </h3>'$'\n'
-    elif [ "$( ${CMD_GREP} 'class="warning"' <<< \"${TMP_OVERVIEW_OUTPUT}\" )x" != "x" ] ; then
-        TMP_OVERVIEW_OUTPUT+='      <div id="overall" class="ca_content_info_ca warning">'$'\n'
-        TMP_OVERVIEW_OUTPUT+='          <h3>'$'\n'
-        TMP_OVERVIEW_OUTPUT+='              WARNING'$'\n'
-        TMP_OVERVIEW_OUTPUT+='          </h3>'$'\n'
-    else
-        TMP_OVERVIEW_OUTPUT+='      <div id="overall" class="ca_content_info_ca info">'$'\n'
-        TMP_OVERVIEW_OUTPUT+='          <h3>'$'\n'
-        TMP_OVERVIEW_OUTPUT+='              OK'$'\n'
-        TMP_OVERVIEW_OUTPUT+='          </h3>'$'\n'
-    fi
-    TMP_OVERVIEW_OUTPUT+='          </div>'$'\n'
-    TMP_OVERVIEW_OUTPUT+='      </div>'$'\n'
+    # log information
 
     TMP_OVERVIEW_OUTPUT+="      <div id=\"ca_content_log\">"$'\n'
     TMP_OVERVIEW_OUTPUT+='          <hr>'$'\n'
@@ -1793,17 +1798,32 @@ function f_overview_set() {
     TMP_OVERVIEW_OUTPUT+='  </body>'$'\n'
     TMP_OVERVIEW_OUTPUT+='  <script>'$'\n'
     TMP_OVERVIEW_OUTPUT+='      function set_menu(evt, ca) {'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          var i, ca_content, menu_tab_link;'$'\n'
+    TMP_OVERVIEW_OUTPUT+='          var i, ca_content, menu_tab_link, tmp_element;'$'\n'
     TMP_OVERVIEW_OUTPUT+='          ca_content = document.getElementsByClassName("ca_content");'$'\n'
     TMP_OVERVIEW_OUTPUT+='          for (i = 0; i < ca_content.length; i++) {'$'\n'
     TMP_OVERVIEW_OUTPUT+='              ca_content[i].style.display = "none";'$'\n'
     TMP_OVERVIEW_OUTPUT+='          }'$'\n'
     TMP_OVERVIEW_OUTPUT+='          menu_tab_link = document.getElementsByClassName("menu_tab_link");'$'\n'
     TMP_OVERVIEW_OUTPUT+='          for (i = 0; i < menu_tab_link.length; i++) {'$'\n'
-    TMP_OVERVIEW_OUTPUT+='              menu_tab_link[i].className = menu_tab_link[i].className.replace(" active", "");'$'\n'
+    TMP_OVERVIEW_OUTPUT+='              menu_tab_link[i].classList.remove("active");'$'\n'
     TMP_OVERVIEW_OUTPUT+='          }'$'\n'
+    TMP_OVERVIEW_OUTPUT+='          set_error();'$'\n'
     TMP_OVERVIEW_OUTPUT+='          document.getElementById(ca).style.display = "block";'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          evt.currentTarget.className += " active";'$'\n'
+    TMP_OVERVIEW_OUTPUT+='          evt.currentTarget.classList.remove("error");'$'\n'
+    TMP_OVERVIEW_OUTPUT+='          evt.currentTarget.classList.add("active");'$'\n'
+    TMP_OVERVIEW_OUTPUT+='      }'$'\n'
+    TMP_OVERVIEW_OUTPUT+='      function set_error() {'$'\n'
+    TMP_OVERVIEW_OUTPUT+="          for (let i = 1; i < ${TMP_COUNTER}; i++) {"$'\n'
+    TMP_OVERVIEW_OUTPUT+='              tmp_element = document.getElementById(i).innerHTML;'$'\n'
+    TMP_OVERVIEW_OUTPUT+='              tmp_element_name = "";'$'\n'
+    TMP_OVERVIEW_OUTPUT+="              if (tmp_element.indexOf('class=\"error\"') !== -1) {"$'\n'
+    TMP_OVERVIEW_OUTPUT+='                  tmp_element_name = "menu_tab_" + i;'$'\n'
+    TMP_OVERVIEW_OUTPUT+='                  document.getElementById(tmp_element_name).classList.add("error");'$'\n'
+    TMP_OVERVIEW_OUTPUT+='                  document.getElementById("status_value").style.color = "#ffa4a9";'$'\n'
+    TMP_OVERVIEW_OUTPUT+='                  document.getElementById("status_value").innerHTML = "Status: Not OK";'$'\n'
+    TMP_OVERVIEW_OUTPUT+='              }'$'\n'
+    TMP_OVERVIEW_OUTPUT+='              tmp_element = "";'$'\n'
+    TMP_OVERVIEW_OUTPUT+='          }'$'\n'
     TMP_OVERVIEW_OUTPUT+='      }'$'\n'
     TMP_OVERVIEW_OUTPUT+='  </script>'$'\n'
     TMP_OVERVIEW_OUTPUT+='  </html>'$'\n'
