@@ -711,7 +711,7 @@ function f_req_set() {
     ${CMD_ECHO} "O=${PKI_REQ_ORGANIZATION}" >> "${PKI_REQ_OUTPUT_FILE}.conf"
     ${CMD_ECHO} "1.OU=${PKI_REQ_ORGANIZATIONUNIT}" >> "${PKI_REQ_OUTPUT_FILE}.conf"
     if [ "${PKI_REQ_EMAIL}x" != "x" ] ; then
-       ${CMD_ECHO} "emailAddres=${PKI_REQ_EMAIL}" >> "${PKI_REQ_OUTPUT_FILE}.conf"
+       ${CMD_ECHO} "emailAddress=${PKI_REQ_EMAIL}" >> "${PKI_REQ_OUTPUT_FILE}.conf"
     fi
     ${CMD_ECHO} "CN=${PKI_REQ_COMMONNAME}" >> "${PKI_REQ_OUTPUT_FILE}.conf"
     ${CMD_ECHO} "[ req_cert_extensions ]" >> "${PKI_REQ_OUTPUT_FILE}.conf"
@@ -1282,13 +1282,13 @@ function f_cert_unset() {
         exit ${TMP_FALSE}
     fi
 
-    TMP_CA_CONF_DIR=$( ${CMD_GREP} --extended-regexp "^dir\s+=\s+.*$" < "${PKI_CA_CONF_FILE}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_XARGS} )
+    TMP_CA_CONF_DIR=$( ${CMD_GREP} --extended-regexp "^dir\s+=\s+.*$" < "${PKI_CA_CONF_FILE}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_AWK} '{ print $1 }' | ${CMD_XARGS} )
     if [ "${TMP_CA_CONF_DIR}x" == "x" ] || [ ! -d "${TMP_CA_CONF_DIR}" ] ; then
         ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The CA configuration variable 'dir' from CA configration file '${PKI_CA_CONF_FILE}' and value '${TMP_CA_CONF_DIR}' could not be extracted to a valid directory path.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
         exit ${TMP_FALSE}
     fi
 
-    TMP_CA_CONF_CERTDIR=$( ${CMD_GREP} --extended-regexp "^new_certs_dir\s+=\s+.*$" < "${PKI_CA_CONF_FILE}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_XARGS} )
+    TMP_CA_CONF_CERTDIR=$( ${CMD_GREP} --extended-regexp "^new_certs_dir\s+=\s+.*$" < "${PKI_CA_CONF_FILE}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_AWK} '{ print $1 }' | ${CMD_XARGS} )
     if [ "${TMP_CA_CONF_CERTDIR}x" == "x" ] ; then
         ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The CA configuration variable 'new_certs_dir' from CA configration file '${PKI_CA_CONF_FILE}' and value '${TMP_CA_CONF_CERTDIR}' could not be extracted]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
         exit ${TMP_FALSE}
@@ -1363,187 +1363,189 @@ function f_overview_set() {
     TMP_OVERVIEW_CA_COUNT=$( ${CMD_AWK} -F ', ' '{ print NF }' <<< "${PKI_CA_OVERVIEW_INPUT_CONF_FILE}" )
 
     # start writing to output variable for HTML code
-    TMP_OVERVIEW_OUTPUT='<!DOCTYPE html>'$'\n'
-    TMP_OVERVIEW_OUTPUT+='<html lang="de">'$'\n'
-    TMP_OVERVIEW_OUTPUT+='<head>'$'\n'
-    TMP_OVERVIEW_OUTPUT+='  <meta charset="UTF-8">'$'\n'
-    TMP_OVERVIEW_OUTPUT+='  <meta name="viewport" content="width=device-width, initial-scale=1.0">'$'\n'
-    TMP_OVERVIEW_OUTPUT+='  <meta http-equiv="X-UA-Compatible" content="ie=edge">'$'\n'
-    TMP_OVERVIEW_OUTPUT+='  <link rel="icon" type="image/png" href="data:image/png;base64,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">'
-    TMP_OVERVIEW_OUTPUT+='  <title>Overview PKI</title>'$'\n'
-    TMP_OVERVIEW_OUTPUT+='  <style>'$'\n'
-    TMP_OVERVIEW_OUTPUT+='      body {'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          font-family: Arial;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          margin: 0px;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          height: 100%;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='      }'$'\n'
-    TMP_OVERVIEW_OUTPUT+=''$'\n'
-    TMP_OVERVIEW_OUTPUT+='      table, th, td {'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          border: none;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          table-layout: fixed;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          word-wrap: break-word;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='      }'$'\n'
-    TMP_OVERVIEW_OUTPUT+=''$'\n'
-    TMP_OVERVIEW_OUTPUT+='      th {'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          text-align: left;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='      }'$'\n'
-    TMP_OVERVIEW_OUTPUT+=''$'\n'
-    TMP_OVERVIEW_OUTPUT+=''$'\n'
-    TMP_OVERVIEW_OUTPUT+='      tr {'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          border-radius: 2px;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='      }'$'\n'
-    TMP_OVERVIEW_OUTPUT+=''$'\n'
-    TMP_OVERVIEW_OUTPUT+='      #menu_tab {'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          overflow: hidden;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          border-bottom: 1px solid #ededed;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          width: 100%;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          min-height: 40px;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='      }'$'\n'
-    TMP_OVERVIEW_OUTPUT+=''$'\n'
-    TMP_OVERVIEW_OUTPUT+='      #menu_tab button {'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          background-color: #cbdceb;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          float: left;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          border: none;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          outline: none;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          cursor: pointer;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          padding: 14px 16px;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          transition: 0.3s;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          font-size: 17px;'$'\n'
-    TMP_OVERVIEW_OUTPUT+="          width: calc((100% / ${TMP_OVERVIEW_CA_COUNT}) - ((${TMP_OVERVIEW_CA_COUNT} - 1) * 20px));"$'\n'
-    TMP_OVERVIEW_OUTPUT+='          border-right: solid 1px;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          border-top: solid 1px;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          border-left: solid 1px;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          border-top-left-radius: 10px;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          border-top-right-radius: 10px;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          margin-right: 10px;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          margin-left: 10px;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='      }'$'\n'
-    TMP_OVERVIEW_OUTPUT+=''$'\n'
-    TMP_OVERVIEW_OUTPUT+='      #menu_tab button:hover {'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          background-color: #6d94c5;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='      }'$'\n'
-    TMP_OVERVIEW_OUTPUT+=''$'\n'
-    TMP_OVERVIEW_OUTPUT+='      #menu_tab button.active {'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          background-color: #6d94c5;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='      }'$'\n'
-    TMP_OVERVIEW_OUTPUT+=''$'\n'
-    TMP_OVERVIEW_OUTPUT+='      .ca_content {'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          display: none;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          padding: 6px 12px;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='      }'$'\n'
-    TMP_OVERVIEW_OUTPUT+='      #ca_content_log {'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          clear: both;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          padding: 6px 12px;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='      }'$'\n'
-    TMP_OVERVIEW_OUTPUT+=''$'\n'
-    TMP_OVERVIEW_OUTPUT+='      .ca_content_info_ca {'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          width: calc(100% - 12px);'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          border-radius: 5px;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          border: solid 1px #ededed;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          min-height: 40px;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          padding: 5px;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          margin-bottom: 10px;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='      }'$'\n'
-    TMP_OVERVIEW_OUTPUT+=''$'\n'
-    TMP_OVERVIEW_OUTPUT+='      .ca_content_info_certificates {'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          width: calc(50% - 15px);'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          float: left;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          padding: 5px;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          margin-top: 10px;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          border-radius: 5px;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          border: solid 1px #ededed;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='      }'$'\n'
-    TMP_OVERVIEW_OUTPUT+=''$'\n'
-    TMP_OVERVIEW_OUTPUT+='      #status {'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          padding: 10px;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          font-size: 20px;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='      }'$'\n'
-    TMP_OVERVIEW_OUTPUT+=''$'\n'
-    TMP_OVERVIEW_OUTPUT+='      #status_value {'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          font-weight: bolder;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          color: #9dd6ad;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='      }'$'\n'
-    TMP_OVERVIEW_OUTPUT+=''$'\n'
-    TMP_OVERVIEW_OUTPUT+='      #ca_content_divider {'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          width: 6px;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          float: left;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='      }'$'\n'
-    TMP_OVERVIEW_OUTPUT+=''$'\n'
-    TMP_OVERVIEW_OUTPUT+='      #log {'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          width: calc(100% - 12px);'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          border-radius: 5px;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          border: solid 1px #ededed;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          height: 40px;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          padding: 5px;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='      }'$'\n'
-    TMP_OVERVIEW_OUTPUT+=''$'\n'
-    TMP_OVERVIEW_OUTPUT+='      .info {'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          background-color: #9dd6ad;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='      }'$'\n'
-    TMP_OVERVIEW_OUTPUT+=''$'\n'
-    TMP_OVERVIEW_OUTPUT+='      .warning {'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          background-color: #fff8d5;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='      }'$'\n'
-    TMP_OVERVIEW_OUTPUT+=''$'\n'
-    TMP_OVERVIEW_OUTPUT+='      .error {'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          background-color: #ffa4a9 !important;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='      }'$'\n'
-    TMP_OVERVIEW_OUTPUT+=''
-    TMP_OVERVIEW_OUTPUT+='      @media only screen and (max-width: 800px) {'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          /* For mobile phones: */'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          #menu_tab button {'$'\n'
-    TMP_OVERVIEW_OUTPUT+='              width: 100%;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='              border-top-left-radius: 0px;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='              border-top-right-radius: 0px;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='              border-style: none;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          }'$'\n'
-    TMP_OVERVIEW_OUTPUT+=''$'\n'
-    TMP_OVERVIEW_OUTPUT+='          #ca_content_divider {'$'\n'
-    TMP_OVERVIEW_OUTPUT+='              display: none;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          }'$'\n'
-    TMP_OVERVIEW_OUTPUT+=''$'\n'
-    TMP_OVERVIEW_OUTPUT+='          .ca_content_info_certificates {'$'\n'
-    TMP_OVERVIEW_OUTPUT+='              width: calc(100% - 12px);'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          }'$'\n'
-    TMP_OVERVIEW_OUTPUT+='      }'$'\n'
-    TMP_OVERVIEW_OUTPUT+='  </style>'$'\n'
-    TMP_OVERVIEW_OUTPUT+='  </head>'$'\n'
-    TMP_OVERVIEW_OUTPUT+='  <body onload="set_error();">'$'\n'
-    TMP_OVERVIEW_OUTPUT+='      <div id="status">'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          <p>'$'\n'
-    TMP_OVERVIEW_OUTPUT+="              Date generated: $( ${CMD_DATE} --date 'now' --utc +"%a %b %e %Y %X GMT")"$'\n'
-    TMP_OVERVIEW_OUTPUT+='          </p>'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          <p id=status_value>'$'\n'
-    TMP_OVERVIEW_OUTPUT+="              Status: OK"$'\n'
-    TMP_OVERVIEW_OUTPUT+='          </p>'$'\n'
-    TMP_OVERVIEW_OUTPUT+='      </div>'$'\n'
-    TMP_OVERVIEW_OUTPUT+='      <div id="menu_tab">'$'\n'
+    ${CMD_ECHO} '<!DOCTYPE html>' > "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '<html lang="de">' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '<head>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '  <meta charset="UTF-8">' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '  <meta name="viewport" content="width=device-width, initial-scale=1.0">' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '  <meta http-equiv="X-UA-Compatible" content="ie=edge">' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '  <link rel="icon" type="image/png" href="data:image/png;base64,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">' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '  <title>Overview PKI</title>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '  <style>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '      body {' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          font-family: Arial;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          margin: 0px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          height: 100%;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '      }' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '      table, th, td {' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          border: none;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          table-layout: fixed;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          word-wrap: break-word;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '      }' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '      th {' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          text-align: left;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '      }' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '      tr {' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          border-radius: 2px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '      }' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '      #menu_tab {' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          overflow: hidden;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          border-bottom: 1px solid #ededed;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          width: 100%;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          min-height: 40px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '      }' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '      #menu_tab button {' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          background-color: #cbdceb;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          float: left;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          border: none;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          outline: none;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          cursor: pointer;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          padding: 14px 16px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          transition: 0.3s;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          font-size: 17px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} "          width: calc((100% / ${TMP_OVERVIEW_CA_COUNT}) - ((${TMP_OVERVIEW_CA_COUNT} - 1) * 10px));" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          border-right: solid 1px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          border-top: solid 1px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          border-left: solid 1px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          border-top-left-radius: 10px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          border-top-right-radius: 10px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          margin-right: 10px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          margin-left: 10px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '      }' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '      #menu_tab button:hover {' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          background-color: #6d94c5;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '      }' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '      #menu_tab button.active {' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          background-color: #6d94c5;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '      }' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '      .ca_content {' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          display: none;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          padding: 6px 12px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '      }' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '      #ca_content_log {' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          clear: both;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          padding: 6px 12px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '      }' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '      .ca_content_info_ca {' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          width: calc(100% - 12px);' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          border-radius: 5px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          border: solid 1px #ededed;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          min-height: 40px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          padding: 5px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          margin-bottom: 10px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '      }' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '      .ca_content_info_certificates {' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          width: calc(50% - 15px);' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          float: left;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          padding: 5px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          margin-top: 10px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          border-radius: 5px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          border: solid 1px #ededed;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '      }' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '      #status {' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          padding: 10px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          font-size: 20px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '      }' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '      #status_value {' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          font-weight: bolder;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          color: #9dd6ad;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '      }' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '      #ca_content_divider {' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          width: 6px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          float: left;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '      }' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '      #log {' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          width: calc(100% - 12px);' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          border-radius: 5px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          border: solid 1px #ededed;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          height: 40px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          padding: 5px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '      }' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '      .info {' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          background-color: #9dd6ad;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '      }' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '      .warning {' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          background-color: #fff8d5;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '      }' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '      .error {' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          background-color: #ffa4a9 !important;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '      }' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '      @media only screen and (max-width: 800px) {' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          /* For mobile phones: */' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          #menu_tab button {' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '              width: 100%;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '              border-top-left-radius: 0px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '              border-top-right-radius: 0px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '              border-style: none;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '              border-top: solid thin #ededed;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '              border-bottom: solid thin #ededed;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          }' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          #ca_content_divider {' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '              display: none;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          }' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          .ca_content_info_certificates {' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '              width: calc(100% - 12px);' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          }' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '      }' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '  </style>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '  </head>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '  <body onload="set_error();">' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '      <div id="status">' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          <p id=status_date>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} "              Date generated: $( ${CMD_DATE} --date 'now' --utc +'%Y-%m-%d %X GMT')" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          </p>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          <p id=status_value>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} "              Status: OK" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          </p>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '      </div>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '      <div id="menu_tab">' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
 
     TMP_IFS=${IFS}
     IFS=', '
     TMP_COUNTER=1
     for i in ${PKI_CA_OVERVIEW_INPUT_CONF_FILE} ; do
-        TMP_CA_CONF_CERTIFICATE=$( ${CMD_GREP} --extended-regexp "^certificate(\ .*=|=).*$" "${i}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_XARGS} )
+        TMP_CA_CONF_CERTIFICATE=$( ${CMD_GREP} --extended-regexp "^certificate\s+=\s+.*$" "${i}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_AWK} '{ print $1 }' | ${CMD_XARGS} )
 
         if [[ "${TMP_CA_CONF_CERTIFICATE}" =~ ^\$dir.*$ ]] ; then
-            TMP_CA_CONF_DIR=$( ${CMD_GREP} --extended-regexp "^dir\s+=\s+.*$" < "${i}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_XARGS} )
+            TMP_CA_CONF_DIR=$( ${CMD_GREP} --extended-regexp "^dir\s+=\s+.*$" < "${i}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_AWK} '{ print $1 }' | ${CMD_XARGS} )
             TMP_CA_CONF_CERTIFICATE=$( ${CMD_AWK} -v dir="${TMP_CA_CONF_DIR}" -F '\\$dir' '{ print dir$2 }' <<< "${TMP_CA_CONF_CERTIFICATE}" )
         fi
         if [ "${TMP_CA_CONF_CERTIFICATE}x" == "x" ] || [ ! -f "${TMP_CA_CONF_CERTIFICATE}" ] ; then
             ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_YELLOW}[${TMP_OUTPUT_INFO}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The CA certificate filepath with extracted value '${TMP_CA_CONF_CERTIFICATE}' from the CA configuration file '${i}' is not a valid filepath. Skipping the menu creation for the CA on overview HTML file '${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html'.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
             continue
         fi
-        TMP_CA_CONF_CERTIFICATE_CN=$( ${CMD_OPENSSL} x509 -in "${TMP_CA_CONF_CERTIFICATE}" -text -noout 2>/dev/null | ${CMD_GREP} "Subject:" | ${CMD_AWK} -F 'CN=' '{ print $2 }' )
+        TMP_CA_CONF_CERTIFICATE_CN=$( ${CMD_OPENSSL} x509 -in "${TMP_CA_CONF_CERTIFICATE}" -text -noout 2>/dev/null | ${CMD_GREP} "Subject:" | ${CMD_AWK} -F 'CN=' '{ print $2 }' | ${CMD_AWK} -F ',' '{ print $1 }' )
         if [ "${TMP_CA_CONF_CERTIFICATE_CN}x" == "x" ] ; then
             ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_YELLOW}[${TMP_OUTPUT_INFO}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The common name (value: '${TMP_CA_CONF_CERTIFICATE_CN}') could not be extracted from the CA with configuration file '${i}'. Skipping the menu creation for the CA on overview HTML file '${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html'. ]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
             continue
         fi
 
-        TMP_OVERVIEW_OUTPUT+="          <button class=\"menu_tab_link\" id=\"menu_tab_${TMP_COUNTER}\" onclick=\"set_menu(event, '${TMP_COUNTER}')\">${TMP_CA_CONF_CERTIFICATE_CN}</button>"$'\n'
+        ${CMD_ECHO} "          <button class=\"menu_tab_link\" id=\"menu_tab_${TMP_COUNTER}\" onclick=\"set_menu(event, '${TMP_COUNTER}')\">${TMP_CA_CONF_CERTIFICATE_CN}</button>" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
         TMP_COUNTER=$((TMP_COUNTER+1))
     done
 
-    TMP_OVERVIEW_OUTPUT+='      </div>'$'\n'
+    ${CMD_ECHO} '      </div>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
 
     for i in ${PKI_CA_OVERVIEW_INPUT_CONF_FILE} ; do
         TMP_CA_CERTIFICATES_REVOKED=""
@@ -1551,10 +1553,10 @@ function f_overview_set() {
         TMP_OVERVIEW_CA_CHECK_DATE=""
         TMP_OVERVIEW_CA_CHECK_NUMBER=""
 
-        TMP_CA_CONF_CERTIFICATE=$( ${CMD_GREP} --extended-regexp "^certificate\s+=\s+.*$" < "${i}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_XARGS} )
+        TMP_CA_CONF_CERTIFICATE=$( ${CMD_GREP} --extended-regexp "^certificate\s+=\s+.*$" < "${i}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_AWK} '{ print $1 }' | ${CMD_XARGS} )
 
         if [[ "${TMP_CA_CONF_CERTIFICATE}" =~ ^\$dir.*$ ]] ; then
-            TMP_CA_CONF_DIR=$( ${CMD_GREP} --extended-regexp "^dir\s+=\s+.*$" < "${i}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_XARGS} )
+            TMP_CA_CONF_DIR=$( ${CMD_GREP} --extended-regexp "^dir\s+=\s+.*$" < "${i}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_AWK} '{ print $1 }' | ${CMD_XARGS} )
             TMP_CA_CONF_CERTIFICATE=$( ${CMD_AWK} -v dir="${TMP_CA_CONF_DIR}" -F '\\$dir' '{ print dir$2 }' <<< "${TMP_CA_CONF_CERTIFICATE}" )
         fi
 
@@ -1563,18 +1565,18 @@ function f_overview_set() {
             continue
         fi
 
-        TMP_CA_CONF_CRLDIR=$( ${CMD_GREP} --extended-regexp "^crl_dir\s+=\s+.*$" < "${i}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_XARGS} )
+        TMP_CA_CONF_CRLDIR=$( ${CMD_GREP} --extended-regexp "^crl_dir\s+=\s+.*$" < "${i}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_AWK} '{ print $1 }' | ${CMD_XARGS} )
 
         if [[ "${TMP_CA_CONF_CRLDIR}" =~ ^\$dir.*$ ]] ; then
-            TMP_CA_CONF_DIR=$( ${CMD_GREP} --extended-regexp "^dir\s+=\s+.*$" < "${i}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_XARGS} )
+            TMP_CA_CONF_DIR=$( ${CMD_GREP} --extended-regexp "^dir\s+=\s+.*$" < "${i}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_AWK} '{ print $1 }' | ${CMD_XARGS} )
             TMP_CA_CONF_CRLDIR=$( ${CMD_AWK} -v dir="${TMP_CA_CONF_DIR}" -F '\\$dir' '{ print dir$2 }' <<< "${TMP_CA_CONF_CRLDIR}" )
         fi
 
 
-        TMP_CA_CONF_CRL=$( ${CMD_GREP} --extended-regexp "^crl\s+=\s+.*$" < "${i}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_XARGS} )
+        TMP_CA_CONF_CRL=$( ${CMD_GREP} --extended-regexp "^crl\s+=\s+.*$" < "${i}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_AWK} '{ print $1 }' | ${CMD_XARGS} )
 
         if [[ "${TMP_CA_CONF_CRL}" =~ ^\$dir.*$ ]] ; then
-            TMP_CA_CONF_DIR=$( ${CMD_GREP} --extended-regexp "^dir\s+=\s+.*$" < "${i}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_XARGS} )
+            TMP_CA_CONF_DIR=$( ${CMD_GREP} --extended-regexp "^dir\s+=\s+.*$" < "${i}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_AWK} '{ print $1 }' | ${CMD_XARGS} )
             TMP_CA_CONF_CRL=$( ${CMD_AWK} -v dir="${TMP_CA_CONF_DIR}" -F '\\$dir' '{ print dir$2 }' <<< "${TMP_CA_CONF_CRL}" )
         fi
 
@@ -1582,9 +1584,9 @@ function f_overview_set() {
             TMP_CA_CONF_CRL=$( ${CMD_AWK} -v dir="${TMP_CA_CONF_CRLDIR}" -F '\\$crl_dir' '{ print dir$2 }' <<< "${TMP_CA_CONF_CRL}" )
         fi
 
-        TMP_CA_CONF_CERTDB=$( ${CMD_GREP} --extended-regexp "^database\s+=\s+.*$" < "${i}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_XARGS} )
+        TMP_CA_CONF_CERTDB=$( ${CMD_GREP} --extended-regexp "^database\s+=\s+.*$" < "${i}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_AWK} '{ print $1 }' | ${CMD_XARGS} )
         if [[ "${TMP_CA_CONF_CERTDB}" =~ ^\$dir.*$ ]] ; then
-            TMP_CA_CONF_DIR=$( ${CMD_GREP} --extended-regexp "^dir\s+=\s+.*$" < "${i}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_XARGS} )
+            TMP_CA_CONF_DIR=$( ${CMD_GREP} --extended-regexp "^dir\s+=\s+.*$" < "${i}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_AWK} '{ print $1 }' | ${CMD_XARGS} )
             TMP_CA_CONF_CERTDB=$( ${CMD_AWK} -v dir="${TMP_CA_CONF_DIR}" -F '\\$dir' '{ print dir$2 }' <<< "${TMP_CA_CONF_CERTDB}" )
         fi
 
@@ -1593,9 +1595,9 @@ function f_overview_set() {
             continue
         fi
 
-        TMP_CA_CONF_NEWCERTS=$( ${CMD_GREP} --extended-regexp "^new_certs_dir\s+=\s+.*$" < "${i}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_XARGS} )
+        TMP_CA_CONF_NEWCERTS=$( ${CMD_GREP} --extended-regexp "^new_certs_dir\s+=\s+.*$" < "${i}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_AWK} '{ print $1 }' | ${CMD_XARGS} )
         if [[ "${TMP_CA_CONF_NEWCERTS}" =~ ^\$dir.*$ ]] ; then
-            TMP_CA_CONF_DIR=$( ${CMD_GREP} --extended-regexp "^dir\s+=\s+.*$" < "${i}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_XARGS} )
+            TMP_CA_CONF_DIR=$( ${CMD_GREP} --extended-regexp "^dir\s+=\s+.*$" < "${i}" 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' | ${CMD_AWK} '{ print $1 }' | ${CMD_XARGS} )
             TMP_CA_CONF_NEWCERTS=$( ${CMD_AWK} -v dir="${TMP_CA_CONF_DIR}" -F '\\$dir' '{ print dir$2 }' <<< "${TMP_CA_CONF_NEWCERTS}" )
         fi
 
@@ -1604,17 +1606,17 @@ function f_overview_set() {
             continue
         fi
 
-        TMP_CA_CONF_CERTIFICATE_CN=$( ${CMD_OPENSSL} x509 -in "${TMP_CA_CONF_CERTIFICATE}" -text -noout 2>/dev/null | ${CMD_GREP} "Subject:" | ${CMD_AWK} -F 'CN=' '{ print $2 }' )
+        TMP_CA_CONF_CERTIFICATE_CN=$( ${CMD_OPENSSL} x509 -in "${TMP_CA_CONF_CERTIFICATE}" -text -noout 2>/dev/null | ${CMD_GREP} "Subject:" | ${CMD_AWK} -F 'CN=' '{ print $2 }' | ${CMD_AWK} -F ',' '{ print $1 }' )
 
-        TMP_OVERVIEW_CA_CHECK=$( ${CMD_GREP} --ignore-case '(event' <<< "${TMP_OVERVIEW_OUTPUT}" 2>/dev/null | ${CMD_AWK} -F "['><]" '{ print $3,$5 }' | ${CMD_GREP} "${TMP_CA_CONF_CERTIFICATE_CN}" )
+        TMP_OVERVIEW_CA_CHECK=$( ${CMD_GREP} --ignore-case '(event' < "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html" 2>/dev/null | ${CMD_AWK} -F "['><]" '{ print $3,$5 }' | ${CMD_GREP} "${TMP_CA_CONF_CERTIFICATE_CN}" )
         if [ "${TMP_OVERVIEW_CA_CHECK}x" == "x" ] ; then
             ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_YELLOW}[${TMP_OUTPUT_INFO}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The common name (value: '${TMP_CA_CONF_CERTIFICATE_CN}') could not be found in the already generated menu structure of the CA overview file '${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html'.  Skipping the content creation for the CA on overview HTML file '${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html'.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
             continue
         fi
 
-        TMP_OVERVIEW_CA_CHECK_NUMBER=$( ${CMD_GREP} --ignore-case '(event' <<< "${TMP_OVERVIEW_OUTPUT}" 2>/dev/null | ${CMD_AWK} -F "['><]" '{ print $3,$5 }' | ${CMD_GREP} "${TMP_CA_CONF_CERTIFICATE_CN}" | ${CMD_AWK} '{ print $1 }' )
+        TMP_OVERVIEW_CA_CHECK_NUMBER=$( ${CMD_GREP} --ignore-case '(event' < "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html" 2>/dev/null | ${CMD_AWK} -F "['><]" '{ print $3,$5 }' | ${CMD_GREP} "${TMP_CA_CONF_CERTIFICATE_CN}" | ${CMD_AWK} '{ print $1 }' )
 
-        TMP_CA_CONF_CERTIFICATE_SERIAL=$( ${CMD_OPENSSL} x509 -in "${TMP_CA_CONF_CERTIFICATE}" -text -noout 2>/dev/null | ${CMD_GREP} --after 1 "Serial Number:" | ${CMD_TAIL} --line 1 | ${CMD_XARGS} )
+        TMP_CA_CONF_CERTIFICATE_SERIAL=$( ${CMD_OPENSSL} x509 -in "${TMP_CA_CONF_CERTIFICATE}" -text -noout 2>/dev/null | ${CMD_GREP} "Serial Number:" | ${CMD_TAIL} --line 1 | ${CMD_AWK} -F ':' '{ print $2 }' | ${CMD_AWK} '{ print $1 }' | ${CMD_XARGS} )
         TMP_CA_CONF_CERTIFICATE_START=$( ${CMD_OPENSSL} x509 -in "${TMP_CA_CONF_CERTIFICATE}" -text -noout 2>/dev/null | ${CMD_GREP} "Not Before" | ${CMD_AWK} -F ': ' '{ print $2 }' )
         TMP_CA_CONF_CERTIFICATE_END=$( ${CMD_OPENSSL} x509 -in "${TMP_CA_CONF_CERTIFICATE}" -text -noout -enddate 2>/dev/null | ${CMD_GREP} "Not After" | ${CMD_AWK} -F ': ' '{ print $2 }' )
 
@@ -1626,33 +1628,33 @@ function f_overview_set() {
         # CA certificate status
         TMP_OVERVIEW_CA_CHECK_DATE=$(( ($(date --date="${TMP_CA_CONF_CERTIFICATE_END}" +%s) - $(date --date="now" +%s) )/(60*60*24) ))
 
-        TMP_OVERVIEW_OUTPUT+="      <div id=\"${TMP_OVERVIEW_CA_CHECK_NUMBER}\" class=\"ca_content\">"$'\n'
-        TMP_OVERVIEW_OUTPUT+='          <div class="ca_content_info_ca">'$'\n'
-        TMP_OVERVIEW_OUTPUT+='              <h3>'$'\n'
-        TMP_OVERVIEW_OUTPUT+='                  CA Certificate Information'$'\n'
-        TMP_OVERVIEW_OUTPUT+='              </h3>'$'\n'
-        TMP_OVERVIEW_OUTPUT+='              <table style="width:100%">'$'\n'
-        TMP_OVERVIEW_OUTPUT+='                  <tr>'$'\n'
-        TMP_OVERVIEW_OUTPUT+='                      <th>CN</th>'$'\n'
-        TMP_OVERVIEW_OUTPUT+='                      <th>Serial</th>'$'\n'
-        TMP_OVERVIEW_OUTPUT+='                      <th>Valid From</th>'$'\n'
-        TMP_OVERVIEW_OUTPUT+='                      <th>Valid To</th>'$'\n'
-        TMP_OVERVIEW_OUTPUT+='                  </tr>'$'\n'
+        ${CMD_ECHO} "      <div id=\"${TMP_OVERVIEW_CA_CHECK_NUMBER}\" class=\"ca_content\">" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} '          <div class="ca_content_info_ca">' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} '              <h3>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} '                  CA Certificate Information' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} '              </h3>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} '              <table style="width:100%">' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} '                  <tr>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} '                      <th>CN</th>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} '                      <th>Serial</th>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} '                      <th>Valid From</th>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} '                      <th>Valid To</th>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} '                  </tr>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
         if [[ "${TMP_OVERVIEW_CA_CHECK_DATE}" -lt "365" ]] && [[ "${TMP_OVERVIEW_CA_CHECK_DATE}" -ge "180" ]] ; then
-            TMP_OVERVIEW_OUTPUT+="              <tr class=\"warning\">"$'\n'
+            ${CMD_ECHO} "              <tr class=\"warning\">" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
         elif [[ "${TMP_OVERVIEW_CA_CHECK_DATE}" -lt "180" ]]; then
-            TMP_OVERVIEW_OUTPUT+="              <tr class=\"error\">"$'\n'
+            ${CMD_ECHO} "              <tr class=\"error\">" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
         else
-            TMP_OVERVIEW_OUTPUT+="              <tr class=\"info\">"$'\n'
+            ${CMD_ECHO} "              <tr class=\"info\">" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
         fi
-        TMP_OVERVIEW_OUTPUT+="                      <td>${TMP_CA_CONF_CERTIFICATE_CN}</td>"$'\n'
-        TMP_OVERVIEW_OUTPUT+="                      <td>${TMP_CA_CONF_CERTIFICATE_SERIAL}</td>"$'\n'
-        TMP_OVERVIEW_OUTPUT+="                      <td>${TMP_CA_CONF_CERTIFICATE_START}</td>"$'\n'
-        TMP_OVERVIEW_OUTPUT+="                      <td>${TMP_CA_CONF_CERTIFICATE_END}</td>"$'\n'
-        TMP_OVERVIEW_OUTPUT+='                  </tr>'$'\n'
-        TMP_OVERVIEW_OUTPUT+='              </table>'$'\n'
-        TMP_OVERVIEW_OUTPUT+='          </div>'$'\n'
-        TMP_OVERVIEW_OUTPUT+='          <hr>'$'\n'
+        ${CMD_ECHO} "                      <td>${TMP_CA_CONF_CERTIFICATE_CN}</td>" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} "                      <td>${TMP_CA_CONF_CERTIFICATE_SERIAL}</td>" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} "                      <td>${TMP_CA_CONF_CERTIFICATE_START}</td>" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} "                      <td>${TMP_CA_CONF_CERTIFICATE_END}</td>" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} '                  </tr>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} '              </table>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} '          </div>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} '          <hr>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
 
         # CA CRL status
         if [ "${TMP_CA_CONF_CRL}x" == "x" ] || [ ! -f "${TMP_CA_CONF_CRL}" ] ; then
@@ -1664,45 +1666,45 @@ function f_overview_set() {
             TMP_OVERVIEW_CRL_CHECK_DATE=$(( ($(date --date="${TMP_CA_CONF_CRL_END}" +%s) - $(date --date="now" +%s) )/(60*60*24) ))
             TMP_OVERVIEW_CRL_CHECK_DATE_HOURS=$(( ($(date --date="${TMP_CA_CONF_CRL_END}" +%s) - $(date --date="now" +%s) )/(60*60) ))
 
-            TMP_OVERVIEW_OUTPUT+='          <div class="ca_content_info_ca">'$'\n'
-            TMP_OVERVIEW_OUTPUT+='              <h3>'$'\n'
-            TMP_OVERVIEW_OUTPUT+="                  CA CRL Information ($( if [ "${TMP_OVERVIEW_CRL_CHECK_DATE}x" == "x" ] || [ "${TMP_OVERVIEW_CRL_CHECK_DATE_HOURS}x" == "x" ] ; then ${CMD_ECHO} "?" ; elif [ ${TMP_OVERVIEW_CRL_CHECK_DATE} -gt 0 ] ; then ${CMD_ECHO} "${TMP_OVERVIEW_CRL_CHECK_DATE} days" ; elif [ ${TMP_OVERVIEW_CRL_CHECK_DATE} -le 0 ] && [ ${TMP_OVERVIEW_CRL_CHECK_DATE_HOURS} -gt 0 ]  ; then ${CMD_ECHO} "${TMP_OVERVIEW_CRL_CHECK_DATE_HOURS} hours" ; else ${CMD_ECHO} "0 hours" ; fi ) remaining)"$'\n'
-            TMP_OVERVIEW_OUTPUT+='              </h3>'$'\n'
-            TMP_OVERVIEW_OUTPUT+='              <table style="width:100%">'$'\n'
-            TMP_OVERVIEW_OUTPUT+='                  <tr>'$'\n'
-            TMP_OVERVIEW_OUTPUT+='                      <th>Valid From</th>'$'\n'
-            TMP_OVERVIEW_OUTPUT+='                      <th>Valid To</th>'$'\n'
-            TMP_OVERVIEW_OUTPUT+='                  </tr>'$'\n'
+            ${CMD_ECHO} '          <div class="ca_content_info_ca">' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+            ${CMD_ECHO} '              <h3>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+            ${CMD_ECHO} "                  CA CRL Information ($( if [ "${TMP_OVERVIEW_CRL_CHECK_DATE}x" == "x" ] || [ "${TMP_OVERVIEW_CRL_CHECK_DATE_HOURS}x" == "x" ] ; then ${CMD_ECHO} "?" ; elif [ ${TMP_OVERVIEW_CRL_CHECK_DATE} -gt 0 ] ; then ${CMD_ECHO} "${TMP_OVERVIEW_CRL_CHECK_DATE} days" ; elif [ ${TMP_OVERVIEW_CRL_CHECK_DATE} -le 0 ] && [ ${TMP_OVERVIEW_CRL_CHECK_DATE_HOURS} -gt 0 ]  ; then ${CMD_ECHO} "${TMP_OVERVIEW_CRL_CHECK_DATE_HOURS} hours" ; else ${CMD_ECHO} "0 hours" ; fi ) remaining)" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+            ${CMD_ECHO} '              </h3>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+            ${CMD_ECHO} '              <table style="width:100%">' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+            ${CMD_ECHO} '                  <tr>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+            ${CMD_ECHO} '                      <th>Valid From</th>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+            ${CMD_ECHO} '                      <th>Valid To</th>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+            ${CMD_ECHO} '                  </tr>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
             if [[ "${TMP_OVERVIEW_CRL_CHECK_DATE}" -le "5" ]] && [[ "${TMP_OVERVIEW_CRL_CHECK_DATE}" -ge "1" ]] ; then
-                TMP_OVERVIEW_OUTPUT+="              <tr class=\"warning\">"$'\n'
+                ${CMD_ECHO} "              <tr class=\"warning\">" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
             elif [[ "${TMP_OVERVIEW_CRL_CHECK_DATE}" -lt "1" ]]; then
-                TMP_OVERVIEW_OUTPUT+="              <tr class=\"error\">"$'\n'
+                ${CMD_ECHO} "              <tr class=\"error\">" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
             else
-                TMP_OVERVIEW_OUTPUT+="              <tr class=\"info\">"$'\n'
+                ${CMD_ECHO} "              <tr class=\"info\">" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
             fi
-            TMP_OVERVIEW_OUTPUT+="                      <td>${TMP_CA_CONF_CRL_START}</td>"$'\n'
-            TMP_OVERVIEW_OUTPUT+="                      <td>${TMP_CA_CONF_CRL_END}</td>"$'\n'
-            TMP_OVERVIEW_OUTPUT+='                  </tr>'$'\n'
-            TMP_OVERVIEW_OUTPUT+='              </table>'$'\n'
-            TMP_OVERVIEW_OUTPUT+='          </div>'$'\n'
-            TMP_OVERVIEW_OUTPUT+='          <hr>'$'\n'
+            ${CMD_ECHO} "                      <td>${TMP_CA_CONF_CRL_START}</td>" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+            ${CMD_ECHO} "                      <td>${TMP_CA_CONF_CRL_END}</td>" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+            ${CMD_ECHO} '                  </tr>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+            ${CMD_ECHO} '              </table>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+            ${CMD_ECHO} '          </div>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+            ${CMD_ECHO} '          <hr>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
         fi
 
         # certificate status
         TMP_CA_CERTIFICATES_REVOKED=$( ${CMD_GREP} --extended-regexp "^R" < "${TMP_CA_CONF_CERTDB}" | ${CMD_AWK} -F ' ' '{ $1=$2=$5=""; print $0}' )
         TMP_CA_CERTIFICATES_VALID=$( ${CMD_GREP} --extended-regexp "^V" < "${TMP_CA_CONF_CERTDB}" | ${CMD_AWK} -F ' ' '{ $1=$2=$4=""; print $0 }' )
 
-        TMP_OVERVIEW_OUTPUT+='          <div class="ca_content_info_certificates">'$'\n'
-        TMP_OVERVIEW_OUTPUT+='              <h3>'$'\n'
-        TMP_OVERVIEW_OUTPUT+='                  CA Valid Certificates'$'\n'
-        TMP_OVERVIEW_OUTPUT+='              </h3>'$'\n'
-        TMP_OVERVIEW_OUTPUT+='              <table style="width:100%">'$'\n'
-        TMP_OVERVIEW_OUTPUT+='                  <tr>'$'\n'
-        TMP_OVERVIEW_OUTPUT+='                      <th>CN</th>'$'\n'
-        TMP_OVERVIEW_OUTPUT+='                      <th>Serial</th>'$'\n'
-        TMP_OVERVIEW_OUTPUT+='                      <th>Valid From</th>'$'\n'
-        TMP_OVERVIEW_OUTPUT+='                      <th>Valid To</th>'$'\n'
-        TMP_OVERVIEW_OUTPUT+='                  </tr>'$'\n'
+        ${CMD_ECHO} '          <div class="ca_content_info_certificates">' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} '              <h3>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} '                  CA Valid Certificates' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} '              </h3>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} '              <table style="width:100%">' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} '                  <tr>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} '                      <th>CN</th>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} '                      <th>Serial</th>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} '                      <th>Valid From</th>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} '                      <th>Valid To</th>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} '                  </tr>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
 
         while read -r j ; do
             TMP_OVERVIEW_CA_CHECK_DATE=""
@@ -1717,37 +1719,37 @@ function f_overview_set() {
             TMP_OVERVIEW_CA_CHECK_DATE=$(( ($(date --date="${TMP_CA_CERTIFICATES_ELEMENT_END}" +%s) - $(date --date="now" +%s) )/(60*60*24) ))
             if [ "${TMP_CA_CERTIFICATES_ELEMENT_CN}x" != "x" ] || [ "${TMP_CA_CERTIFICATES_ELEMENT_SERIAL}x" != "x" ] || [ "${TMP_CA_CERTIFICATES_ELEMENT_START}x" != "x" ] || [ "${TMP_CA_CERTIFICATES_ELEMENT_END}x" != "x" ]  ; then
                 if [[ "${TMP_OVERVIEW_CA_CHECK_DATE}" -lt "90" ]] && [[ "${TMP_OVERVIEW_CA_CHECK_DATE}" -ge "30" ]] ; then
-                    TMP_OVERVIEW_OUTPUT+="          <tr class=\"warning\">"$'\n'
-                elif [[ "${TMP_OVERVIEW_CA_CHECK_DATE}" -lt "30" ]]; then
-                    TMP_OVERVIEW_OUTPUT+="          <tr class=\"error\">"$'\n'
+                    ${CMD_ECHO} "          <tr class=\"warning\">" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+                elif [[ "${TMP_OVERVIEW_CA_CHECK_DATE}" -lt "30" ]] && [[ "${TMP_OVERVIEW_CA_CHECK_DATE}" -gt "0" ]] ; then
+                    ${CMD_ECHO} "          <tr class=\"error\">" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
                 else
-                    TMP_OVERVIEW_OUTPUT+="          <tr class=\"info\">"$'\n'
+                    ${CMD_ECHO} "          <tr class=\"info\">" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
                 fi
-                TMP_OVERVIEW_OUTPUT+="                  <td>${TMP_CA_CERTIFICATES_ELEMENT_CN}</td>"$'\n'
-                TMP_OVERVIEW_OUTPUT+="                  <td>${TMP_CA_CERTIFICATES_ELEMENT_SERIAL}</td>"$'\n'
-                TMP_OVERVIEW_OUTPUT+="                  <td>${TMP_CA_CERTIFICATES_ELEMENT_START}</td>"$'\n'
-                TMP_OVERVIEW_OUTPUT+="                  <td>${TMP_CA_CERTIFICATES_ELEMENT_END}</td>"$'\n'
-                TMP_OVERVIEW_OUTPUT+='              </tr>'$'\n'
+                ${CMD_ECHO} "                  <td>${TMP_CA_CERTIFICATES_ELEMENT_CN}</td>" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+                ${CMD_ECHO} "                  <td>${TMP_CA_CERTIFICATES_ELEMENT_SERIAL}</td>" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+                ${CMD_ECHO} "                  <td>${TMP_CA_CERTIFICATES_ELEMENT_START}</td>" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+                ${CMD_ECHO} "                  <td>${TMP_CA_CERTIFICATES_ELEMENT_END}</td>" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+                ${CMD_ECHO} '              </tr>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
             fi
         done <<< "${TMP_CA_CERTIFICATES_VALID}"
 
-        TMP_OVERVIEW_OUTPUT+='              </table>'$'\n'
-        TMP_OVERVIEW_OUTPUT+='          </div>'$'\n'
-        TMP_OVERVIEW_OUTPUT+='          <div id="ca_content_divider">'$'\n'
-        TMP_OVERVIEW_OUTPUT+='              &nbsp;'$'\n'
-        TMP_OVERVIEW_OUTPUT+='          </div>'$'\n'
-        TMP_OVERVIEW_OUTPUT+='          <div class="ca_content_info_certificates">'$'\n'
-        TMP_OVERVIEW_OUTPUT+='              <h3>'$'\n'
-        TMP_OVERVIEW_OUTPUT+='                  CA Revoked Certificates'$'\n'
-        TMP_OVERVIEW_OUTPUT+='              </h3>'$'\n'
-        TMP_OVERVIEW_OUTPUT+='              <table style="width:100%">'$'\n'
-        TMP_OVERVIEW_OUTPUT+='                  <tr>'$'\n'
-        TMP_OVERVIEW_OUTPUT+='                      <th>CN</th>'$'\n'
-        TMP_OVERVIEW_OUTPUT+='                      <th>Serial</th>'$'\n'
-        TMP_OVERVIEW_OUTPUT+='                      <th>Valid From</th>'$'\n'
-        TMP_OVERVIEW_OUTPUT+='                      <th>Valid To</th>'$'\n'
-        TMP_OVERVIEW_OUTPUT+='                      <th>Revoke Reason</th>'$'\n'
-        TMP_OVERVIEW_OUTPUT+='                  </tr>'$'\n'
+        ${CMD_ECHO} '              </table>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} '          </div>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} '          <div id="ca_content_divider">' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} '              &nbsp;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} '          </div>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} '          <div class="ca_content_info_certificates">' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} '              <h3>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} '                  CA Revoked Certificates' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} '              </h3>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} '              <table style="width:100%">' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} '                  <tr>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} '                      <th>CN</th>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} '                      <th>Serial</th>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} '                      <th>Valid From</th>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} '                      <th>Valid To</th>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} '                      <th>Revoke Reason</th>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} '                  </tr>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
         while read -r j ; do
             TMP_OVERVIEW_CA_CHECK_DATE=""
             TMP_CA_CERTIFICATES_ELEMENT_CN=""
@@ -1761,75 +1763,84 @@ function f_overview_set() {
             TMP_CA_CERTIFICATES_ELEMENT_END=$( ${CMD_OPENSSL} x509 -in "${TMP_CA_CONF_NEWCERTS}/${TMP_CA_CERTIFICATES_ELEMENT_SERIAL}.pem" -text -noout 2>/dev/null | ${CMD_GREP} "Not After" | ${CMD_AWK} -F ': ' '{ print$2 }' )
             TMP_OVERVIEW_CA_CHECK_DATE=$(( ($(date --date="${TMP_CA_CERTIFICATES_ELEMENT_END}" +%s) - $(date --date="now" +%s) )/(60*60*24) ))
             if [ "${TMP_CA_CERTIFICATES_ELEMENT_CN}x" != "x" ] || [ "${TMP_CA_CERTIFICATES_ELEMENT_SERIAL}x" != "x" ] || [ "${TMP_CA_CERTIFICATES_ELEMENT_START}x" != "x" ] || [ "${TMP_CA_CERTIFICATES_ELEMENT_END}x" != "x" ]  ; then
-                TMP_OVERVIEW_OUTPUT+="              <tr>"$'\n'
-                TMP_OVERVIEW_OUTPUT+="                  <td>${TMP_CA_CERTIFICATES_ELEMENT_CN}</td>"$'\n'
-                TMP_OVERVIEW_OUTPUT+="                  <td>${TMP_CA_CERTIFICATES_ELEMENT_SERIAL}</td>"$'\n'
-                TMP_OVERVIEW_OUTPUT+="                  <td>${TMP_CA_CERTIFICATES_ELEMENT_START}</td>"$'\n'
-                TMP_OVERVIEW_OUTPUT+="                  <td>${TMP_CA_CERTIFICATES_ELEMENT_END}</td>"$'\n'
-                TMP_OVERVIEW_OUTPUT+="                  <td>${TMP_CA_CERTIFICATES_ELEMENT_REASON}</td>"$'\n'
-                TMP_OVERVIEW_OUTPUT+='              </tr>'$'\n'
+                ${CMD_ECHO} "              <tr>" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+                ${CMD_ECHO} "                  <td>${TMP_CA_CERTIFICATES_ELEMENT_CN}</td>" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+                ${CMD_ECHO} "                  <td>${TMP_CA_CERTIFICATES_ELEMENT_SERIAL}</td>" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+                ${CMD_ECHO} "                  <td>${TMP_CA_CERTIFICATES_ELEMENT_START}</td>" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+                ${CMD_ECHO} "                  <td>${TMP_CA_CERTIFICATES_ELEMENT_END}</td>" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+                ${CMD_ECHO} "                  <td>${TMP_CA_CERTIFICATES_ELEMENT_REASON}</td>" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+                ${CMD_ECHO} '              </tr>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
             fi
         done <<< "${TMP_CA_CERTIFICATES_REVOKED}"
-        TMP_OVERVIEW_OUTPUT+='              </table>'$'\n'
-        TMP_OVERVIEW_OUTPUT+='          </div>'$'\n'
-        TMP_OVERVIEW_OUTPUT+='      </div>'$'\n'
+        ${CMD_ECHO} '              </table>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} '          </div>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} '      </div>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     done
     IFS=${TMP_IFS}
     # log information
 
-    TMP_OVERVIEW_OUTPUT+="      <div id=\"ca_content_log\">"$'\n'
-    TMP_OVERVIEW_OUTPUT+='          <hr>'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          <div class="ca_content_info_ca">'$'\n'
-    TMP_OVERVIEW_OUTPUT+='              <h3>'$'\n'
-    TMP_OVERVIEW_OUTPUT+='                  Log Information'$'\n'
-    TMP_OVERVIEW_OUTPUT+='              </h3>'$'\n'
+    ${CMD_ECHO} "      <div id=\"ca_content_log\">" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          <hr>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          <div class="ca_content_info_ca">' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '              <h3>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '                  Log Information' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '              </h3>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     while read -r j ; do
         if [[ "${j}" =~ "33m" ]] ; then
-            TMP_OVERVIEW_OUTPUT+="              <p class=\"warning\">"$'\n'
+            ${CMD_ECHO} "              <p class=\"warning\">" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
         elif [[ "${j}" =~ "31m" ]] ; then
-            TMP_OVERVIEW_OUTPUT+="              <p class=\"error\">"$'\n'
+            ${CMD_ECHO} "              <p class=\"error\">" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
         else
-            TMP_OVERVIEW_OUTPUT+="              <p class=\"info\">"$'\n'
+            ${CMD_ECHO} "              <p class=\"info\">" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
         fi
-        TMP_OVERVIEW_OUTPUT+="                  $( ${CMD_AWK} -F '] ' '{print $2"]",$3}' <<< "${j}" 2>/dev/null | ${CMD_AWK} -F '' '{ print $1 }' )"$'\n'
-        TMP_OVERVIEW_OUTPUT+='              </p>'$'\n'
+        ${CMD_ECHO} "                  $( ${CMD_AWK} -F '] ' '{print $2"]",$3}' <<< "${j}" 2>/dev/null | ${CMD_AWK} -F '' '{ print $1 }' )" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} '              </p>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     done <<< $( ${CMD_TAIL} --line 30 < "${TMP_LOG_PATH}" )
-    TMP_OVERVIEW_OUTPUT+='          </div>'$'\n'
-    TMP_OVERVIEW_OUTPUT+='      </div>'$'\n'
-    TMP_OVERVIEW_OUTPUT+='  </body>'$'\n'
-    TMP_OVERVIEW_OUTPUT+='  <script>'$'\n'
-    TMP_OVERVIEW_OUTPUT+='      function set_menu(evt, ca) {'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          var i, ca_content, menu_tab_link, tmp_element;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          ca_content = document.getElementsByClassName("ca_content");'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          for (i = 0; i < ca_content.length; i++) {'$'\n'
-    TMP_OVERVIEW_OUTPUT+='              ca_content[i].style.display = "none";'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          }'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          menu_tab_link = document.getElementsByClassName("menu_tab_link");'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          for (i = 0; i < menu_tab_link.length; i++) {'$'\n'
-    TMP_OVERVIEW_OUTPUT+='              menu_tab_link[i].classList.remove("active");'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          }'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          set_error();'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          document.getElementById(ca).style.display = "block";'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          evt.currentTarget.classList.remove("error");'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          evt.currentTarget.classList.add("active");'$'\n'
-    TMP_OVERVIEW_OUTPUT+='      }'$'\n'
-    TMP_OVERVIEW_OUTPUT+='      function set_error() {'$'\n'
-    TMP_OVERVIEW_OUTPUT+="          for (let i = 1; i < ${TMP_COUNTER}; i++) {"$'\n'
-    TMP_OVERVIEW_OUTPUT+='              tmp_element = document.getElementById(i).innerHTML;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='              tmp_element_name = "";'$'\n'
-    TMP_OVERVIEW_OUTPUT+="              if (tmp_element.indexOf('class=\"error\"') !== -1) {"$'\n'
-    TMP_OVERVIEW_OUTPUT+='                  tmp_element_name = "menu_tab_" + i;'$'\n'
-    TMP_OVERVIEW_OUTPUT+='                  document.getElementById(tmp_element_name).classList.add("error");'$'\n'
-    TMP_OVERVIEW_OUTPUT+='                  document.getElementById("status_value").style.color = "#ffa4a9";'$'\n'
-    TMP_OVERVIEW_OUTPUT+='                  document.getElementById("status_value").innerHTML = "Status: Not OK";'$'\n'
-    TMP_OVERVIEW_OUTPUT+='              }'$'\n'
-    TMP_OVERVIEW_OUTPUT+='              tmp_element = "";'$'\n'
-    TMP_OVERVIEW_OUTPUT+='          }'$'\n'
-    TMP_OVERVIEW_OUTPUT+='      }'$'\n'
-    TMP_OVERVIEW_OUTPUT+='  </script>'$'\n'
-    TMP_OVERVIEW_OUTPUT+='  </html>'$'\n'
-    ${CMD_ECHO} "${TMP_OVERVIEW_OUTPUT}" > "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
-
+    ${CMD_ECHO} '          </div>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '      </div>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '  </body>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '  <script>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '      function set_menu(evt, ca) {' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          var i, ca_content, menu_tab_link, tmp_element;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          ca_content = document.getElementsByClassName("ca_content");' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          for (i = 0; i < ca_content.length; i++) {' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '              ca_content[i].style.display = "none";' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          }' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          menu_tab_link = document.getElementsByClassName("menu_tab_link");' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          for (i = 0; i < menu_tab_link.length; i++) {' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '              menu_tab_link[i].classList.remove("active");' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          }' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          set_error();' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          document.getElementById(ca).style.display = "block";' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          evt.currentTarget.classList.remove("error");' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          evt.currentTarget.classList.add("active");' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '      }' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '      function set_error() {' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} "          for (let i = 1; i < ${TMP_COUNTER}; i++) {" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '              tmp_element = document.getElementById(i).innerHTML;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '              tmp_element_name = "";' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} "              if (tmp_element.indexOf('class=\"error\"') !== -1) {" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '                  tmp_element_name = "menu_tab_" + i;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '                  document.getElementById(tmp_element_name).classList.add("error");' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '                  document.getElementById("status_value").style.color = "#ffa4a9";' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '                  document.getElementById("status_value").innerHTML = "Status: Not OK";' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '              }' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '              tmp_element = "";' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          }' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          const tmp_date = new Date();' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} "          const tmp_date_gen = new Date(\"$( ${CMD_DATE} --date 'now' --utc +'%Y-%m-%d %X GMT')\");" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          var tmp_hours = Math.abs(tmp_date - tmp_date_gen) / 36e5;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          if (tmp_hours > 24) {' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '              document.getElementById("status_date").style.color = "#ffa4a9";' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '              document.getElementById("status_date").append(" (generation date older than 24 hours)");' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          }' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          else {' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '              document.getElementById("status_date").style.color = "#9dd6ad";' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          }' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '      }' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '  </script>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '  </html>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+   
     if [ -f "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html" ] ; then
         ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_GREEN}[${TMP_OUTPUT_CHECK}] [$( ${CMD_DATE} -d 'now' -u +"%Y%m%d%H%M%SZ" )] [The PKI HTML overview file '${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html' was successfully created.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
         exit ${TMP_TRUE}
