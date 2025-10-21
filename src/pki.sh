@@ -1409,7 +1409,7 @@ function f_overview_set() {
     ${CMD_ECHO} '          padding: 14px 16px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '          transition: 0.3s;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '          font-size: 17px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
-    ${CMD_ECHO} "          width: calc((100% / ${TMP_OVERVIEW_CA_COUNT}) - ((${TMP_OVERVIEW_CA_COUNT} - 1) * 10px));" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} "          width: calc((100% / ${TMP_OVERVIEW_CA_COUNT}) - (${TMP_OVERVIEW_CA_COUNT} * 10px));" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '          border-right: solid 1px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '          border-top: solid 1px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '          border-left: solid 1px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
@@ -1615,8 +1615,7 @@ function f_overview_set() {
         fi
 
         TMP_OVERVIEW_CA_CHECK_NUMBER=$( ${CMD_GREP} --ignore-case '(event' < "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html" 2>/dev/null | ${CMD_AWK} -F "['><]" '{ print $3,$5 }' | ${CMD_GREP} "${TMP_CA_CONF_CERTIFICATE_CN}" | ${CMD_AWK} '{ print $1 }' )
-
-        TMP_CA_CONF_CERTIFICATE_SERIAL=$( ${CMD_OPENSSL} x509 -in "${TMP_CA_CONF_CERTIFICATE}" -text -noout 2>/dev/null | ${CMD_GREP} "Serial Number:" | ${CMD_TAIL} --line 1 | ${CMD_AWK} -F ':' '{ print $2 }' | ${CMD_AWK} '{ print $1 }' | ${CMD_XARGS} )
+        TMP_CA_CONF_CERTIFICATE_SERIAL=$( ${CMD_OPENSSL} x509 -in "${TMP_CA_CONF_CERTIFICATE}" -serial -noout 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' )
         TMP_CA_CONF_CERTIFICATE_START=$( ${CMD_OPENSSL} x509 -in "${TMP_CA_CONF_CERTIFICATE}" -text -noout 2>/dev/null | ${CMD_GREP} "Not Before" | ${CMD_AWK} -F ': ' '{ print $2 }' )
         TMP_CA_CONF_CERTIFICATE_END=$( ${CMD_OPENSSL} x509 -in "${TMP_CA_CONF_CERTIFICATE}" -text -noout -enddate 2>/dev/null | ${CMD_GREP} "Not After" | ${CMD_AWK} -F ': ' '{ print $2 }' )
 
