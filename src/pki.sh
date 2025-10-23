@@ -43,6 +43,8 @@ CMD_DATE=$( ${CMD_WHEREIS} date | ${CMD_AWK} '{ print $2 }' )
 CMD_DATE=${CMD_DATE:-/usr/bin/date}
 CMD_DD=$( ${CMD_WHEREIS} dd | ${CMD_AWK} '{ print $2 }' )
 CMD_DD=${CMD_DD:-/usr/bin/dd}
+CMD_DU=$( ${CMD_WHEREIS} du | ${CMD_AWK} '{ print $2 }' )
+CMD_DU=${CMD_DU:-/usr/bin/du}
 CMD_DIRNAME=$( ${CMD_WHEREIS} dirname | ${CMD_AWK} '{ print $2 }' )
 CMD_DIRNAME=${CMD_DIRNAME:-/usr/bin/dirname}
 CMD_ENV=$( ${CMD_WHEREIS} env | ${CMD_AWK} '{ print $2 }' )
@@ -66,15 +68,17 @@ CMD_TEE=${CMD_TEE:-/usr/bin/tee}
 CMD_TOUCH=$( ${CMD_WHEREIS} touch | ${CMD_AWK} '{ print $2 }' )
 CMD_TOUCH=${CMD_TOUCH:-/usr/bin/touch}
 CMD_UNSET=$( ${CMD_WHEREIS} unset | ${CMD_AWK} '{ print $2 }' )
-CMD_UNSET=${CMD_ENV:-/usr/bin/unset}
+CMD_UNSET=${CMD_UNSET:-/usr/bin/unset}
 CMD_WC=$( ${CMD_WHEREIS} wc | ${CMD_AWK} '{ print $2 }' )
 CMD_WC=${CMD_WC:-/usr/bin/wc}
+CMD_WGET=$( ${CMD_WHEREIS} wget | ${CMD_AWK} '{ print $2 }' )
+CMD_WGET=${CMD_WGET:-/usr/bin/wget}
 CMD_WHOAMI=$( ${CMD_WHEREIS} whoami | ${CMD_AWK} '{ print $2 }' )
 CMD_WHOAMI=${CMD_WHOAMI:-/usr/bin/whoami}
 CMD_XARGS=$( ${CMD_WHEREIS} xargs | ${CMD_AWK} '{ print $2 }' )
 CMD_XARGS=${CMD_XARGS:-/usr/bin/xargs}
 
-for TMP in "${CMD_ECHO}" "${CMD_AWK}" "${CMD_WHEREIS}" "${CMD_CAT}" "${CMD_DATE}" "${CMD_DD}" "${CMD_DIRNAME}" "${CMD_DIRNAME}" "${CMD_ENV}" "${CMD_GREP}" "${CMD_MKDIR}" "${CMD_OPENSSL}" "${CMD_RM}" "${CMD_SED}" "${CMD_SEQ}" "${CMD_TAIL}" "${CMD_TEE}" "${CMD_TOUCH}" "${CMD_UNSET}" "${CMD_WC}" "${CMD_WHOAMI}" "${CMD_XARGS}" ; do
+for TMP in "${CMD_ECHO}" "${CMD_AWK}" "${CMD_WHEREIS}" "${CMD_CAT}" "${CMD_DATE}" "${CMD_DD}" "${CMD_DIRNAME}" "${CMD_DU}" "${CMD_ENV}" "${CMD_GREP}" "${CMD_MKDIR}" "${CMD_OPENSSL}" "${CMD_RM}" "${CMD_SED}" "${CMD_SEQ}" "${CMD_TAIL}" "${CMD_TEE}" "${CMD_TOUCH}" "${CMD_UNSET}" "${CMD_WC}" "${CMD_WGET}" "${CMD_WHOAMI}" "${CMD_XARGS}" ; do
     if [ "${TMP}x" == "x" ] || [ ! -f "${TMP}" ] ; then
         TMP_NAME=(${!TMP@})
         ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The bash variable '${TMP_NAME}' with value '${TMP}' does not reference to a valid command binary path or is empty.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
@@ -193,12 +197,12 @@ function f_parameter_verify() {
             fi
             
             if [ ! -w "${2}" ] ; then
-                ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The passed private key output path '${2}' in variable 'PKI_KEY_OUTPUT_FILE' is not writable for the executing user. Please ensure that the user '${TMP_USER}' has write permission on folder '${PKI_CA_OUTPUT_PATH}'.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
+                ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The passed private key output path '${2}' in variable 'PKI_KEY_OUTPUT_FILE' is not writable for the executing user. Please ensure that the user '${TMP_USER}' has write permission on folder '${2}'.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
                 exit ${TMP_FALSE} 
             fi
             ;;
         "PKI_CA_NAME")
-            if [[ ! "${2}" =~ ^[a-Z0-9]{4,32}$ ]] ; then
+            if [[ ! "${2}" =~ ^[a-zA-Z0-9]{4,32}$ ]] ; then
                 ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The passed CA name '${2}' in variable 'PKI_CA_NAME' must only consist of 4-32 alphabetical or numerical characters.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
                 exit ${TMP_FALSE}
             fi
@@ -210,14 +214,14 @@ function f_parameter_verify() {
             fi
             ;;
         "PKI_CA_PATHLENGTH")
-            if [[ ! "${2}" =~ ^[0-9]{1,3}$ ]] && [ ${2} -ge 0 ] && [ ${2} -lt 256 ] ; then
+            if [[ ! "${2}" =~ ^[0-9]{1,3}$ ]] || [ ${2} -lt 0 ] || [ ${2} -gt 256 ] ; then
                 ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The passed CA path length '${2}' in variable 'PKI_CA_PATHLENGTH' must only consist of a number between 0 and 256.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
                 exit ${TMP_FALSE}
             fi
             ;;
         "PKI_CA_BASE_URI")
             if [[ ! "${2}" =~ ^http(|s): ]] ; then 
-                ${CMD_ECHO} -e "${TMP_OUTPUcertificateT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The passed CA base URI '${2}' in variable 'PKI_CA_BASE_URI' does not to be a valid URI. Please check it as it is used for certificate and CRL publishing default in the basic configuration file.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
+                ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The passed CA base URI '${2}' in variable 'PKI_CA_BASE_URI' does not to be a valid URI. Please check it as it is used for certificate and CRL publishing default in the basic configuration file.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
                 exit ${TMP_FALSE}
             fi
             ;;
@@ -270,31 +274,31 @@ function f_parameter_verify() {
             fi
             ;;
         "PKI_REQ_STATE")
-            if [[ ! "${2}" =~ ^[a-Z]{2,32}$ ]] ; then
+            if [[ ! "${2}" =~ ^[a-zA-Z]{2,32}$ ]] ; then
                 ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The passed request state field '${2}' in variable 'PKI_REQ_STATE' must consist of 2 up to 32 letters.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
                 exit ${TMP_FALSE}
             fi
             ;;
         "PKI_REQ_LOCATION")
-            if [[ ! "${2}" =~ ^[a-Z]{2,32}$ ]] ; then
+            if [[ ! "${2}" =~ ^[a-zA-Z]{2,32}$ ]] ; then
                 ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The passed request location field '${2}' in variable 'PKI_REQ_LOCATION' must consist of 2 up to 32 letters.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
                 exit ${TMP_FALSE}
             fi
             ;;
         "PKI_REQ_ORGANIZATION")
-            if [[ ! "${2}" =~ ^[a-Z0-9.-]{2,32}$ ]] ; then
+            if [[ ! "${2}" =~ ^[a-zA-Z0-9.-]{2,32}$ ]] ; then
                 ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The passed request organization field '${2}' in variable 'PKI_REQ_ORGANIZATION' must consist of 2 up to 32 letters and can include special characters '.' / '-'.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
                 exit ${TMP_FALSE}
             fi
             ;;
         "PKI_REQ_ORGANIZATIONUNIT")
-            if [[ ! "${2}" =~ ^[a-Z0-9.-]{2,32}$ ]] ; then
+            if [[ ! "${2}" =~ ^[a-zA-Z0-9.-]{2,32}$ ]] ; then
                 ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The passed request organization unit field '${2}' in variable 'PKI_REQ_ORGANIZATIONUNIT' must consist of 2 up to 32 letters and can include special characters '.' / '-'.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
                 exit ${TMP_FALSE}
             fi
             ;;
         "PKI_REQ_COMMONNAME")
-            if [[ ! "${2}" =~ ^[a-Z0-9.@\ ]{2,32}$ ]] ; then
+            if [[ ! "${2}" =~ ^[a-zA-Z0-9.@\ ]{2,32}$ ]] ; then
                 ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The passed request common name field '${2}' in variable 'PKI_REQ_COMMONNAME' must consist of 2 up to 32 characters consisting of uppercase, lowercase or the special characters '.' / '@'.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
                 exit ${TMP_FALSE}
             fi
@@ -333,7 +337,7 @@ function f_parameter_verify() {
             TMP_IFS=${IFS}
             IFS=', '
             for i in ${2} ; do
-                if [[ ! "${i}" =~ ^(IP.[0-9]{1,1}:((((1[0-9]{0,2})|(2[0-5]{0,2}))\.((1[0-9]{0,2})|(2[0-5]{0,2}))\.((1[0-9]{0,2})|(2[0-5]{0,2}))\.((1[0-9]{0,2})|(2[0-5]{0,2})))|([0-9A-Fa-f:]{2,39})))|(DNS.[0-9]{1,1}:[a-Z0-9.]{2,64})|(EMAIL.[0-9]{1,1}:((([A-Za-z0-9]+((\.|\-|\_|\+)?[A-Za-z0-9]?)*[A-Za-z0-9]+)|[A-Za-z0-9]+)@(([A-Za-z0-9]+)+((\.|\-|\_)?([A-Za-z0-9]+)+)*)+\.([A-Za-z]{2,})))$ ]] ; then
+                if [[ ! "${i}" =~ ^(IP.[0-9]{1,1}:((((1[0-9]{0,2})|(2[0-5]{0,2}))\.((1[0-9]{0,2})|(2[0-5]{0,2}))\.((1[0-9]{0,2})|(2[0-5]{0,2}))\.((1[0-9]{0,2})|(2[0-5]{0,2})))|([0-9A-Fa-f:]{2,39})))|(DNS.[0-9]{1,1}:[a-zA-Z0-9.]{2,64})|(EMAIL.[0-9]{1,1}:((([A-Za-z0-9]+((\.|\-|\_|\+)?[A-Za-z0-9]?)*[A-Za-z0-9]+)|[A-Za-z0-9]+)@(([A-Za-z0-9]+)+((\.|\-|\_)?([A-Za-z0-9]+)+)*)+\.([A-Za-z]{2,})))$ ]] ; then
                     ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The passed alternate name '${i}' in variable 'PKI_REQ_ALTERNATE_NAME' seems not to be a valid value. Please ensure you use the format 'DNS.[0-9]:example.org' / 'IP.[0-9]:127.0.0.1' / 'EMAIL.1:example@example.org' divided by ', ' for multiple values.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
                 exit ${TMP_FALSE}
                 fi
@@ -435,7 +439,7 @@ function f_parameter_verify() {
             fi
             ;;
         "PKI_CA_EXTENSION")
-            if [[ ! "${2}" =~ ^[0-9a-Z_]{2,32}$ ]] ; then
+            if [[ ! "${2}" =~ ^[0-9a-zA-Z_]{2,32}$ ]] ; then
                ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} -d 'now' -u +"%Y%m%d%H%M%SZ" )] [The passed CA extension value '${2}' in variable 'PKI_CA_EXTENSION' must consist of 2 up to 32 characters and can contain letters, numbers and '_'.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
                 exit ${TMP_FALSE}
             fi
@@ -534,6 +538,12 @@ function f_parameter_verify() {
         "PKI_CRL_OUTPUT_FORMAT")
             if [[ ! "${2}" =~ ^(PEM|DER)$ ]] ; then
                 ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The variable 'PKI_CRL_OUTPUT_FORMAT' with value '${2}' must be set either with the valid output form 'PEM' or 'DER'.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
+                exit ${TMP_FALSE}
+            fi
+            ;;
+        "PKI_CRL_INPUT_URI")
+            if [[ ! "${2}" =~ ^http(|s): ]] ; then 
+                ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The passed CRL input URI '${2}' in variable 'PKI_CRL_INPUT_URI' does not to be a valid URI.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
                 exit ${TMP_FALSE}
             fi
             ;;
@@ -1342,8 +1352,49 @@ function f_crl_copy() {
         ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_GREEN}[${TMP_OUTPUT_CHECK}] [$( ${CMD_DATE} -d 'now' -u +"%Y%m%d%H%M%SZ" )] [The CRL buffer file '${PKI_CRL_OUTPUT_PATH}/${TMP_CRL_NAME}.buffer' was successfully created from CRL '${PKI_CRL_INPUT_FILE}'.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
         exit ${TMP_TRUE}
     else
-        ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} -d 'now' -u +"%Y%m%d%H%M%SZ" )] [The CRL buffer file '${PKI_CRL_OUTPUT_PATH}/${TMP_CRL_NAME}.buffer' could not be created from CRL '${PKI_CRL_INPUT_FILE}'.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
+        ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The CRL buffer file '${PKI_CRL_OUTPUT_PATH}/${TMP_CRL_NAME}.buffer' could not be created from CRL '${PKI_CRL_INPUT_FILE}'.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
         exit ${TMP_FALSE}
+    fi
+}
+
+function f_crl_download() {
+    if [ "${PKI_CRL_OUTPUT_FILE}x" == "x" ] ; then
+        ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The variable 'PKI_CRL_OUTPUT_FILE' must be set with a valid filename path.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
+        exit ${TMP_FALSE}
+    fi
+    
+    if [ "${PKI_CRL_INPUT_URI}x" == "x" ] ; then
+        ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The variable 'PKI_CRL_INPUT_URI' must be set with a valid URI.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
+        exit ${TMP_FALSE}
+    fi
+    
+    TMP_TIME=$( ${CMD_DATE} -d 'now' -u +"%Y%m%d%H%M%SZ" )
+    
+    ${CMD_WGET} --quiet --no-verbose --no-check-certificate -O - "${PKI_CRL_INPUT_URI}" > "/tmp/${TMP_TIME}.crl"
+    
+    if [ $? -ne ${TMP_TRUE} ] ; then
+        ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The download of CRL CRL from URI '${PKI_CRL_INPUT_URI}' to '${PKI_CRL_OUTPUT_FILE}' was not successful.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
+        ${CMD_RM} --force "/tmp/${TMP_TIME}.crl" >/dev/null 2>&1
+        exit ${TMP_FALSE}
+    fi
+    
+    ${CMD_OPENSSL} crl -in "/tmp/${TMP_TIME}.crl" -text -noout >/dev/null 2>&1
+    
+    if [ $? -eq ${TMP_FALSE} ] ; then
+        ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The downloaded CRL CRL from URI '${PKI_CRL_INPUT_URI}' seems not to be a valid CRL. Stopping transfer.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
+        ${CMD_RM} --force "/tmp/${TMP_TIME}.crl" >/dev/null 2>&1
+        exit ${TMP_FALSE}
+    fi
+    
+    ${CMD_CAT} "/tmp/${TMP_TIME}.crl" > "${PKI_CRL_OUTPUT_FILE}"
+    if [ $? -eq ${TMP_TRUE} ] ; then
+        ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_GREEN}[${TMP_OUTPUT_CHECK}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The download of CRL from URI '${PKI_CRL_INPUT_URI}' to '${PKI_CRL_OUTPUT_FILE}' was completed successfully.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
+        ${CMD_RM} --force "/tmp/${TMP_TIME}.crl" >/dev/null 2>&1
+        exit ${TMP_TRUE}
+    else
+       ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The download of CRL from URI '${PKI_CRL_INPUT_URI}' to '${PKI_CRL_OUTPUT_FILE}' was not completed successfully.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
+       ${CMD_RM} --force "/tmp/${TMP_TIME}.crl" >/dev/null 2>&1
+       exit ${TMP_FALSE}
     fi
 }
 
@@ -1910,6 +1961,9 @@ case "${1}" in
         ;;
     "crl_buffer")
         f_crl_copy
+        ;;
+    "crl_download")
+        f_crl_get
         ;;
     "key_create")
         f_key_set
