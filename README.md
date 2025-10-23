@@ -36,6 +36,7 @@ The Project is written as a GNU bash shell script.
 | openssl               | >= 3.5.3                              | necessary     | openssl                                                                                                                               |
 | sed                   | >= 4.9                                | necessary     | sed                                                                                                                                   |
 | whereis               | >= 2.41.2                             | necessary     | whereis                                                                                                                               |
+| wget                  | >= 1.25.0                             | necessary     | wget                                                                                                                               |
 
 ## Setup
 To run this project, you need to clone it to your local computer and run it as a shell script.
@@ -141,6 +142,8 @@ export PKI_SCRIPT_OUTPUT=1
 | pkcs12_create         | PKI_CERT_INPUT_FILE                   | optional      | Certificate filepath.                                                                                                                 |
 |                       | PKI_KEY_INPUT_FILE                    | necessary     | Private key filepath.                                                                                                                 |
 |                       | PKI_KEY_INPUT_PASSWORD                | necessary     | Encryption password of the key. Can be plaintext input or a path to an one-line file containing the password.                         |
+| crl_download          | PKI_CRL_OUTPUT_FILE                   | necessary     | Full filepath of the CRL file to write the buffer file                                                                                |
+|                       | PKI_CRL_INPUT_URI                     | necessary     | Dedicated CRL URI from which it should be downloaded.                                                                                 |
 
 
 #### Syntax Examples
@@ -180,6 +183,10 @@ export PKI_SCRIPT_OUTPUT=1
 ```
 # Buffer CRL to another path
 ./pki.sh crl_buffer "PKI_CRL_OUTPUT_PATH=/tmp:::PKI_CRL_INPUT_FILE=/tmp/caintermediate/signing/crls/caintermediate.crl"
+```
+```
+# Download a CRL to a local file path
+./pki.sh crl_download "PKI_CRL_OUTPUT_FILE=/tmp/caintermediate/signing/crls/caintermediate.crl:::PKI_CRL_INPUT_URI=http://pki.test.crl"
 ```
 ```
 # Create a HTML overview for root and intermdiate CA 
