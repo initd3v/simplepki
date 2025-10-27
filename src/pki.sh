@@ -1460,7 +1460,7 @@ function f_overview_set() {
     ${CMD_ECHO} '          padding: 14px 16px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '          transition: 0.3s;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '          font-size: 17px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
-    ${CMD_ECHO} "          width: calc((100% / ${TMP_OVERVIEW_CA_COUNT}) - (${TMP_OVERVIEW_CA_COUNT} * 10px));" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} "          min-width: calc((100% / ${TMP_OVERVIEW_CA_COUNT}) - (${TMP_OVERVIEW_CA_COUNT} * 10px));" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '          border-right: solid 1px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '          border-top: solid 1px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '          border-left: solid 1px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
@@ -1468,6 +1468,8 @@ function f_overview_set() {
     ${CMD_ECHO} '          border-top-right-radius: 10px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '          margin-right: 10px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '          margin-left: 10px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          font-size: 0.5vw;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          min-height: 100px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '      }' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '      #menu_tab button:hover {' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
@@ -1549,6 +1551,7 @@ function f_overview_set() {
     ${CMD_ECHO} '              border-style: none;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '              border-top: solid thin #ededed;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '              border-bottom: solid thin #ededed;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '              font-size: inherit;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '          }' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '          #ca_content_divider {' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
@@ -1665,7 +1668,7 @@ function f_overview_set() {
             continue
         fi
 
-        TMP_OVERVIEW_CA_CHECK_NUMBER=$( ${CMD_GREP} --ignore-case '(event' < "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html" 2>/dev/null | ${CMD_AWK} -F "['><]" '{ print $3,$5 }' | ${CMD_GREP} "${TMP_CA_CONF_CERTIFICATE_CN}" | ${CMD_AWK} '{ print $1 }' )
+        TMP_OVERVIEW_CA_CHECK_NUMBER=$( ${CMD_GREP} --ignore-case '(event' < "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html" 2>/dev/null | ${CMD_AWK} -F "['><]" '{ print $3,$5 }' | ${CMD_GREP} --extended-regex "^[0-9]{1,2}\ ${TMP_CA_CONF_CERTIFICATE_CN}$" | ${CMD_AWK} '{ print $1 }' )
         TMP_CA_CONF_CERTIFICATE_SERIAL=$( ${CMD_OPENSSL} x509 -in "${TMP_CA_CONF_CERTIFICATE}" -serial -noout 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' )
         TMP_CA_CONF_CERTIFICATE_START=$( ${CMD_OPENSSL} x509 -in "${TMP_CA_CONF_CERTIFICATE}" -text -noout 2>/dev/null | ${CMD_GREP} "Not Before" | ${CMD_AWK} -F ': ' '{ print $2 }' )
         TMP_CA_CONF_CERTIFICATE_END=$( ${CMD_OPENSSL} x509 -in "${TMP_CA_CONF_CERTIFICATE}" -text -noout -enddate 2>/dev/null | ${CMD_GREP} "Not After" | ${CMD_AWK} -F ': ' '{ print $2 }' )
@@ -1866,11 +1869,12 @@ function f_overview_set() {
     ${CMD_ECHO} '          evt.currentTarget.classList.add("active");' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '      }' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '      function set_error() {' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
-    ${CMD_ECHO} "          for (let i = 1; i < ${TMP_COUNTER}; i++) {" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
-    ${CMD_ECHO} '              tmp_element = document.getElementById(i).innerHTML;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          var k, tmp_element_name, tmp_element_name;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} "          for (let k = 1; k < ${TMP_COUNTER}; k++) {" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '              tmp_element = document.getElementById(k).innerHTML;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '              tmp_element_name = "";' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} "              if (tmp_element.indexOf('class=\"error\"') !== -1) {" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
-    ${CMD_ECHO} '                  tmp_element_name = "menu_tab_" + i;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '                  tmp_element_name = "menu_tab_" + k;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '                  document.getElementById(tmp_element_name).classList.add("error");' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '                  document.getElementById("status_value").style.color = "#ffa4a9";' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '                  document.getElementById("status_value").innerHTML = "Status: Not OK";' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
