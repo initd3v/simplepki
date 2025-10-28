@@ -1460,7 +1460,7 @@ function f_overview_set() {
     ${CMD_ECHO} '          padding: 14px 16px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '          transition: 0.3s;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '          font-size: 17px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
-    ${CMD_ECHO} "          min-width: calc((100% / ${TMP_OVERVIEW_CA_COUNT}) - (${TMP_OVERVIEW_CA_COUNT} * 10px));" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} "          min-width: calc((100% / ${TMP_OVERVIEW_CA_COUNT}) - 23px);" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '          border-right: solid 1px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '          border-top: solid 1px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '          border-left: solid 1px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
