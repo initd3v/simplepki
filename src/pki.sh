@@ -495,7 +495,7 @@ function f_parameter_verify() {
 
             # check for a valid request file
             ${CMD_OPENSSL} crl -in "${2}" -text -noout >/dev/null 2>&1
-            if [ $? -eq ${TMP_TRUE} ] ; then
+            if [ $? -ne ${TMP_TRUE} ] ; then
                 ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The passed CRL input file '${2}' in variable 'PKI_CRL_INPUT_FILE' seems not to be a valid CRL file.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
                 exit ${TMP_FALSE}
             fi
@@ -1357,7 +1357,7 @@ function f_crl_copy() {
     fi
 }
 
-function f_crl_download() {
+function f_crl_get() {
     if [ "${PKI_CRL_OUTPUT_FILE}x" == "x" ] ; then
         ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The variable 'PKI_CRL_OUTPUT_FILE' must be set with a valid filename path.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
         exit ${TMP_FALSE}
