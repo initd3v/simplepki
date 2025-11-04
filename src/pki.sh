@@ -1438,6 +1438,9 @@ function f_overview_set() {
     ${CMD_ECHO} '      th {' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '          text-align: left;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '      }' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '      button {' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          cursor: pointer;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '      }' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '      tr {' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
@@ -1456,7 +1459,6 @@ function f_overview_set() {
     ${CMD_ECHO} '          float: left;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '          border: none;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '          outline: none;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
-    ${CMD_ECHO} '          cursor: pointer;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '          padding: 14px 16px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '          transition: 0.3s;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '          font-size: 17px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
@@ -1668,7 +1670,7 @@ function f_overview_set() {
             continue
         fi
 
-        TMP_OVERVIEW_CA_CHECK_NUMBER=$( ${CMD_GREP} --ignore-case '(event' < "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html" 2>/dev/null | ${CMD_AWK} -F "['><]" '{ print $3,$5 }' | ${CMD_GREP} --extended-regex "^[0-9]{1,2}\ ${TMP_CA_CONF_CERTIFICATE_CN}$" | ${CMD_AWK} '{ print $1 }' )
+        TMP_OVERVIEW_CA_CHECK_NUMBER=$( ${CMD_GREP} --ignore-case '(event' < "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html" 2>/dev/null | ${CMD_AWK} -F "['><]" '{ print $3,$5 }' | ${CMD_GREP} --extended-regex "^[0-9]{1,2} ${TMP_CA_CONF_CERTIFICATE_CN}$" | ${CMD_AWK} '{ print $1 }' )
         TMP_CA_CONF_CERTIFICATE_SERIAL=$( ${CMD_OPENSSL} x509 -in "${TMP_CA_CONF_CERTIFICATE}" -serial -noout 2>/dev/null | ${CMD_AWK} -F '=' '{ print $2 }' )
         TMP_CA_CONF_CERTIFICATE_START=$( ${CMD_OPENSSL} x509 -in "${TMP_CA_CONF_CERTIFICATE}" -text -noout 2>/dev/null | ${CMD_GREP} "Not Before" | ${CMD_AWK} -F ': ' '{ print $2 }' )
         TMP_CA_CONF_CERTIFICATE_END=$( ${CMD_OPENSSL} x509 -in "${TMP_CA_CONF_CERTIFICATE}" -text -noout -enddate 2>/dev/null | ${CMD_GREP} "Not After" | ${CMD_AWK} -F ': ' '{ print $2 }' )
@@ -1751,7 +1753,11 @@ function f_overview_set() {
         ${CMD_ECHO} '              <h3>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
         ${CMD_ECHO} '                  CA Valid Certificates' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
         ${CMD_ECHO} '              </h3>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
-        ${CMD_ECHO} '              <table style="width:100%">' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} "              <button id=\"ca_content_info_certificates_button\" onclick=\"toggle_error('ca_content_info_certificates_button', 'ca_content_info_certificates_table', 'tr', 'table-row');\">" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} '                  Show All' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} '              </button>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} '              <br />' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} '              <table style="width:100%" id="ca_content_info_certificates_table">' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
         ${CMD_ECHO} '                  <tr>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
         ${CMD_ECHO} '                      <th>CN</th>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
         ${CMD_ECHO} '                      <th>Serial</th>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
@@ -1776,7 +1782,7 @@ function f_overview_set() {
                 elif [[ "${TMP_OVERVIEW_CA_CHECK_DATE}" -lt "30" ]] && [[ "${TMP_OVERVIEW_CA_CHECK_DATE}" -gt "0" ]] ; then
                     ${CMD_ECHO} "          <tr class=\"error\">" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
                 else
-                    ${CMD_ECHO} "          <tr class=\"info\">" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+                    ${CMD_ECHO} "          <tr class=\"info\" style=\"display: none;\">" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
                 fi
                 ${CMD_ECHO} "                  <td>${TMP_CA_CERTIFICATES_ELEMENT_CN}</td>" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
                 ${CMD_ECHO} "                  <td>${TMP_CA_CERTIFICATES_ELEMENT_SERIAL}</td>" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
@@ -1795,6 +1801,7 @@ function f_overview_set() {
         ${CMD_ECHO} '              <h3>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
         ${CMD_ECHO} '                  CA Revoked Certificates' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
         ${CMD_ECHO} '              </h3>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} '              <br />' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
         ${CMD_ECHO} '              <table style="width:100%">' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
         ${CMD_ECHO} '                  <tr>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
         ${CMD_ECHO} '                      <th>CN</th>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
@@ -1834,21 +1841,24 @@ function f_overview_set() {
 
     ${CMD_ECHO} "      <div id=\"ca_content_log\">" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '          <hr>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
-    ${CMD_ECHO} '          <div class="ca_content_info_ca">' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          <div class="ca_content_info_ca" id="ca_content_info_log">' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '              <h3>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '                  Log Information' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '              </h3>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} "              <button id=\"ca_content_info_log_button\" onclick=\"toggle_error('ca_content_info_log_button', 'ca_content_info_log', 'p', 'block');\">" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '                  Show All' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '              </button>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     while read -r j ; do
         if [[ "${j}" =~ "33m" ]] ; then
             ${CMD_ECHO} "              <p class=\"warning\">" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
         elif [[ "${j}" =~ "31m" ]] ; then
             ${CMD_ECHO} "              <p class=\"error\">" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
         else
-            ${CMD_ECHO} "              <p class=\"info\">" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+            ${CMD_ECHO} "              <p class=\"info\" style=\"display: none;\">" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
         fi
         ${CMD_ECHO} "                  $( ${CMD_AWK} -F '] ' '{print $2"]",$3}' <<< "${j}" 2>/dev/null | ${CMD_AWK} -F '' '{ print $1 }' )" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
         ${CMD_ECHO} '              </p>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
-    done <<< $( ${CMD_TAIL} --line 30 < "${TMP_LOG_PATH}" )
+    done < "${TMP_LOG_PATH}"
     ${CMD_ECHO} '          </div>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '      </div>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '  </body>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
@@ -1892,6 +1902,32 @@ function f_overview_set() {
     ${CMD_ECHO} '              document.getElementById("status_date").style.color = "#9dd6ad";' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '          }' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '      }' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '      function toggle_error (tmp_button_name, tmp_parent_div, tmp_tag_name, tmp_style) {' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          var l, tmp_parent, tmp_child, tmp_element;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          let tmp_button = document.getElementById(tmp_button_name);' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          var tmp_parent = document.getElementById(tmp_parent_div),' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '              tmp_child = tmp_parent.getElementsByTagName(tmp_tag_name);' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          for (l = 0; l < tmp_child.length; ++l) {' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '              tmp_element = tmp_child[l];' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '              if (tmp_button.innerHTML === "Show Only Error / Warning") {' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '                  if (tmp_element.className === "info") {' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '                      tmp_element.style.display = "none";' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '                  }' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '                  if (tmp_element.className !== "info") {' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '                      tmp_element.style.display = tmp_style;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '                  }' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '              }' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '              else {' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '                  tmp_child[l].style.display = tmp_style;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '              }' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          }' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          if (tmp_button.innerHTML === "Show Only Error / Warning") {' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '              tmp_button.innerHTML = "Show All";' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          }' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          else {' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '              tmp_button.innerHTML = "Show Only Error / Warning";' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '          }' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} '       }' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '  </script>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '  </html>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
    
