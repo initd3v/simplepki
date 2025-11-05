@@ -68,7 +68,7 @@ CMD_TEE=${CMD_TEE:-/usr/bin/tee}
 CMD_TOUCH=$( ${CMD_WHEREIS} touch | ${CMD_AWK} '{ print $2 }' )
 CMD_TOUCH=${CMD_TOUCH:-/usr/bin/touch}
 CMD_UNSET=$( ${CMD_WHEREIS} unset | ${CMD_AWK} '{ print $2 }' )
-CMD_UNSET=${CMD_UNSET:-/usr/bin/unset}
+CMD_UNSET=${CMD_UNSET:unset}
 CMD_WC=$( ${CMD_WHEREIS} wc | ${CMD_AWK} '{ print $2 }' )
 CMD_WC=${CMD_WC:-/usr/bin/wc}
 CMD_WGET=$( ${CMD_WHEREIS} wget | ${CMD_AWK} '{ print $2 }' )
@@ -78,7 +78,7 @@ CMD_WHOAMI=${CMD_WHOAMI:-/usr/bin/whoami}
 CMD_XARGS=$( ${CMD_WHEREIS} xargs | ${CMD_AWK} '{ print $2 }' )
 CMD_XARGS=${CMD_XARGS:-/usr/bin/xargs}
 
-for TMP in "${CMD_ECHO}" "${CMD_AWK}" "${CMD_WHEREIS}" "${CMD_CAT}" "${CMD_DATE}" "${CMD_DD}" "${CMD_DIRNAME}" "${CMD_DU}" "${CMD_ENV}" "${CMD_GREP}" "${CMD_MKDIR}" "${CMD_OPENSSL}" "${CMD_RM}" "${CMD_SED}" "${CMD_SEQ}" "${CMD_TAIL}" "${CMD_TEE}" "${CMD_TOUCH}" "${CMD_UNSET}" "${CMD_WC}" "${CMD_WGET}" "${CMD_WHOAMI}" "${CMD_XARGS}" ; do
+for TMP in "${CMD_ECHO}" "${CMD_AWK}" "${CMD_WHEREIS}" "${CMD_CAT}" "${CMD_DATE}" "${CMD_DD}" "${CMD_DIRNAME}" "${CMD_DU}" "${CMD_ENV}" "${CMD_GREP}" "${CMD_MKDIR}" "${CMD_OPENSSL}" "${CMD_RM}" "${CMD_SED}" "${CMD_SEQ}" "${CMD_TAIL}" "${CMD_TEE}" "${CMD_TOUCH}" "${CMD_WC}" "${CMD_WGET}" "${CMD_WHOAMI}" "${CMD_XARGS}" ; do
     if [ "${TMP}x" == "x" ] || [ ! -f "${TMP}" ] ; then
         TMP_NAME=(${!TMP@})
         ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The bash variable '${TMP_NAME}' with value '${TMP}' does not reference to a valid command binary path or is empty.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
@@ -1730,9 +1730,9 @@ function f_overview_set() {
             ${CMD_ECHO} '                      <th>Valid From</th>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
             ${CMD_ECHO} '                      <th>Valid To</th>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
             ${CMD_ECHO} '                  </tr>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
-            if [[ "${TMP_OVERVIEW_CRL_CHECK_DATE}" -le "5" ]] && [[ "${TMP_OVERVIEW_CRL_CHECK_DATE}" -ge "1" ]] ; then
+            if [[ "${TMP_OVERVIEW_CRL_CHECK_DATE}" -le "5" ]] && [[ "${TMP_OVERVIEW_CRL_CHECK_DATE}" -gt "0" ]] ; then
                 ${CMD_ECHO} "              <tr class=\"warning\">" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
-            elif [[ "${TMP_OVERVIEW_CRL_CHECK_DATE}" -lt "1" ]]; then
+            elif [[ "${TMP_OVERVIEW_CRL_CHECK_DATE}" -le "0" ]]; then
                 ${CMD_ECHO} "              <tr class=\"error\">" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
             else
                 ${CMD_ECHO} "              <tr class=\"info\">" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
@@ -1749,15 +1749,15 @@ function f_overview_set() {
         TMP_CA_CERTIFICATES_REVOKED=$( ${CMD_GREP} --extended-regexp "^R" < "${TMP_CA_CONF_CERTDB}" | ${CMD_AWK} -F ' ' '{ $1=$2=$5=""; print $0}' )
         TMP_CA_CERTIFICATES_VALID=$( ${CMD_GREP} --extended-regexp "^V" < "${TMP_CA_CONF_CERTDB}" | ${CMD_AWK} -F ' ' '{ $1=$2=$4=""; print $0 }' )
 
-        ${CMD_ECHO} '          <div class="ca_content_info_certificates">' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} "          <div class=\"ca_content_info_certificates\" id=\"ca_content_info_certificates_${TMP_CA_CONF_CERTIFICATE_SERIAL}\">" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
         ${CMD_ECHO} '              <h3>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
         ${CMD_ECHO} '                  CA Valid Certificates' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
         ${CMD_ECHO} '              </h3>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
-        ${CMD_ECHO} "              <button id=\"ca_content_info_certificates_button\" onclick=\"toggle_error('ca_content_info_certificates_button', 'ca_content_info_certificates_table', 'tr', 'table-row');\">" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} "              <button id=\"ca_content_info_certificates_button_${TMP_CA_CONF_CERTIFICATE_SERIAL}\" onclick=\"toggle_error('ca_content_info_certificates_button_${TMP_CA_CONF_CERTIFICATE_SERIAL}', 'ca_content_info_certificates_${TMP_CA_CONF_CERTIFICATE_SERIAL}', 'tr', 'table-row');\">" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
         ${CMD_ECHO} '                  Show All' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
         ${CMD_ECHO} '              </button>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
         ${CMD_ECHO} '              <br />' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
-        ${CMD_ECHO} '              <table style="width:100%" id="ca_content_info_certificates_table">' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+        ${CMD_ECHO} '              <table style="width:100%">' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
         ${CMD_ECHO} '                  <tr>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
         ${CMD_ECHO} '                      <th>CN</th>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
         ${CMD_ECHO} '                      <th>Serial</th>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
