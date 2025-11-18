@@ -36,7 +36,7 @@ The Project is written as a GNU bash shell script.
 | openssl               | >= 3.5.3                              | necessary     | openssl                                                                                                                               |
 | sed                   | >= 4.9                                | necessary     | sed                                                                                                                                   |
 | whereis               | >= 2.41.2                             | necessary     | whereis                                                                                                                               |
-| wget                  | >= 1.25.0                             | necessary     | wget                                                                                                                               |
+| wget                  | >= 1.25.0                             | necessary     | wget                                                                                                                                  |
 
 ## Setup
 To run this project, you need to clone it to your local computer and run it as a shell script.

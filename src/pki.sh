@@ -595,7 +595,7 @@ function f_key_set() {
     fi
 
     if [ "${PKI_KEY_INPUT_PASSWORD}x" == "x" ] ; then
-        read -s -t 120 -p "Please input password for the private key (120 seconds timeout): " PKI_KEY_INPUT_PASSWORD
+        read -s -t 120 -p "Please input password for the private key (120 seconds timeout): "$'\n' PKI_KEY_INPUT_PASSWORD
     fi
     
     if [ "${PKI_KEY_INPUT_PASSWORD}x" == "x" ] ; then
@@ -664,7 +664,7 @@ function f_req_set() {
     fi
     
     if [ "${PKI_KEY_INPUT_PASSWORD}x" == "x" ] ; then
-        read -s -t 120 -p "Please input password for the private key '${PKI_KEY_INPUT_FILE}' (120 seconds timeout): " PKI_KEY_INPUT_PASSWORD
+        read -s -t 120 -p "Please input password for the private key '${PKI_KEY_INPUT_FILE}' (120 seconds timeout): "$'\n' PKI_KEY_INPUT_PASSWORD
     fi
 
     if [ "${PKI_KEY_INPUT_PASSWORD}x" == "x" ] ; then
@@ -805,7 +805,7 @@ function f_cert_set() {
     fi
 
     if [ "${PKI_KEY_INPUT_PASSWORD}x" == "x" ] ; then
-        read -s -t 120 -p "Please input password for the private key '${PKI_KEY_INPUT_FILE}' (120 seconds timeout): " PKI_KEY_INPUT_PASSWORD
+        read -s -t 120 -p "Please input password for the private key '${PKI_KEY_INPUT_FILE}' (120 seconds timeout): "$'\n' PKI_KEY_INPUT_PASSWORD
     fi
     
     if [ "${PKI_KEY_INPUT_PASSWORD}x" == "x" ] ; then
@@ -1231,7 +1231,7 @@ function f_crl_set() {
     fi
 
     if [ "${PKI_KEY_INPUT_PASSWORD}x" == "x" ] ; then
-        read -s -t 120 -p "Please input password for the private key '${PKI_KEY_INPUT_FILE}' (120 seconds timeout): " PKI_KEY_INPUT_PASSWORD
+        read -s -t 120 -p "Please input password for the private key '${PKI_KEY_INPUT_FILE}' (120 seconds timeout): "$'\n' PKI_KEY_INPUT_PASSWORD
     fi
 
     if [ "${PKI_KEY_INPUT_PASSWORD}x" == "x" ] ; then
@@ -1304,7 +1304,7 @@ function f_cert_unset() {
     fi
 
     if [ "${PKI_KEY_INPUT_PASSWORD}x" == "x" ] ; then
-        read -s -t 120 -p "Please input password for the private key '${PKI_KEY_INPUT_FILE}' (120 seconds timeout): " PKI_KEY_INPUT_PASSWORD
+        read -s -t 120 -p "Please input password for the private key '${PKI_KEY_INPUT_FILE}' (120 seconds timeout): "$'\n' PKI_KEY_INPUT_PASSWORD
     fi
 
     if [ "${PKI_KEY_INPUT_PASSWORD}x" == "x" ] ; then
@@ -1967,7 +1967,7 @@ function f_overview_set() {
 
 function f_pkcs12_set() {
     if [ "${PKI_KEY_INPUT_PASSWORD}x" == "x" ] ; then
-        read -s -t 120 -p "Please input password for the private key '${PKI_KEY_INPUT_FILE}' (120 seconds timeout): " PKI_KEY_INPUT_PASSWORD
+        read -s -t 120 -p "Please input password for the private key '${PKI_KEY_INPUT_FILE}' (120 seconds timeout): "$'\n' PKI_KEY_INPUT_PASSWORD
     fi
 
     if [ "${PKI_KEY_INPUT_PASSWORD}x" == "x" ] ; then
