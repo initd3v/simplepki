@@ -423,7 +423,12 @@ function f_parameter_verify() {
             f_parameter_verify "PKI_KEY_INPUT_PASSWORD" "${PKI_KEY_INPUT_PASSWORD}"
 
             # check for a valid CA configuration file
-            ${CMD_OPENSSL} ca -config "${2}" -passin "${PKI_KEY_INPUT_PASSWORD_PREFIX}":"${PKI_KEY_INPUT_PASSWORD}" >/dev/null 2>&1
+            if [ "${PKI_KEY_INPUT_FILE}x" != "x" ] && [ -f "${PKI_KEY_INPUT_FILE}" ] ; then
+                ${CMD_OPENSSL} ca -config "${2}" -keyfile "${PKI_KEY_INPUT_FILE}" -passin "${PKI_KEY_INPUT_PASSWORD_PREFIX}":"${PKI_KEY_INPUT_PASSWORD}" >/dev/null 2>&1
+            else
+                ${CMD_OPENSSL} ca -config "${2}" -passin "${PKI_KEY_INPUT_PASSWORD_PREFIX}":"${PKI_KEY_INPUT_PASSWORD}" >/dev/null 2>&1
+            fi
+
             if [ $? -ne ${TMP_TRUE} ] ; then
                 ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} -d 'now' -u +"%Y%m%d%H%M%SZ" )] [The passed CA configuration file '${2}' in variable 'PKI_CA_CONF_FILE' does not seem to be a valid openssl configuration file.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
                 exit ${TMP_FALSE}
@@ -1503,7 +1508,7 @@ function f_overview_set() {
     ${CMD_ECHO} '          padding: 14px 16px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '          transition: 0.3s;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '          font-size: 17px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
-    ${CMD_ECHO} "          min-width: calc((100% / ${TMP_OVERVIEW_CA_COUNT}) - 23px);" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
+    ${CMD_ECHO} "          width: calc((100% / ${TMP_OVERVIEW_CA_COUNT}) - 20px);" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '          border-right: solid 1px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '          border-top: solid 1px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
     ${CMD_ECHO} '          border-left: solid 1px;' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
@@ -1771,9 +1776,9 @@ function f_overview_set() {
             ${CMD_ECHO} '                      <th>Valid From</th>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
             ${CMD_ECHO} '                      <th>Valid To</th>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
             ${CMD_ECHO} '                  </tr>' >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
-            if [[ "${TMP_OVERVIEW_CRL_CHECK_DATE}" -le "5" ]] && [[ "${TMP_OVERVIEW_CRL_CHECK_DATE}" -gt "0" ]] ; then
+            if [[ "${TMP_OVERVIEW_CRL_CHECK_DATE}" -le "2" ]] && [[ "${TMP_OVERVIEW_CRL_CHECK_DATE_HOURS}" -gt "1" ]] ; then
                 ${CMD_ECHO} "              <tr class=\"warning\">" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
-            elif [[ "${TMP_OVERVIEW_CRL_CHECK_DATE}" -le "0" ]]; then
+            elif [[ "${TMP_OVERVIEW_CRL_CHECK_DATE_HOURS}" -le "1" ]]; then
                 ${CMD_ECHO} "              <tr class=\"error\">" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
             else
                 ${CMD_ECHO} "              <tr class=\"info\">" >> "${PKI_CA_OVERVIEW_OUTPUT_PATH}/pki.html"
@@ -1982,6 +1987,11 @@ function f_overview_set() {
 }
 
 function f_pkcs12_set() {
+    if [ "${PKI_KEY_INPUT_FILE}x" == "x" ] ; then
+        ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The variable 'PKI_KEY_INPUT_FILE' must be set with a valid private key input path.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
+        exit ${TMP_FALSE}
+    fi
+
     if [ "${PKI_KEY_INPUT_PASSWORD}x" == "x" ] ; then
         read -s -t 120 -p "Please input password for the private key '${PKI_KEY_INPUT_FILE}' (120 seconds timeout): "$'\n' PKI_KEY_INPUT_PASSWORD
     fi
@@ -1992,11 +2002,6 @@ function f_pkcs12_set() {
     fi
 
     f_parameter_verify "PKI_KEY_INPUT_PASSWORD" "${PKI_KEY_INPUT_PASSWORD}"
-
-    if [ "${PKI_KEY_INPUT_FILE}x" == "x" ] ; then
-        ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The variable 'PKI_KEY_INPUT_FILE' must be set with a valid private key input path.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
-        exit ${TMP_FALSE}
-    fi
 
     if [ "${PKI_CERT_INPUT_FILE}x" == "x" ] ; then
         ${CMD_ECHO} -e "${TMP_OUTPUT_COLOR_RED}[${TMP_OUTPUT_CROSS}] [$( ${CMD_DATE} --date 'now' --utc +"%Y%m%d%H%M%SZ" )] [The variable 'PKI_CERT_INPUT_FILE' must be set with a valid certifcate input path.]${TMP_OUTPUT_COLOR_RESET}" | if [ "${PKI_SCRIPT_OUTPUT}x" != "1x" ] ; then ${CMD_TEE} --append "${TMP_LOG_PATH}" >/dev/null ; else ${CMD_TEE} --append "${TMP_LOG_PATH}" ; fi
