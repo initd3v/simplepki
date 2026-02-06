@@ -26,17 +26,17 @@ Supported functions:
 The Project is written as a GNU bash shell script.
 
 ## Dependencies
-| Dependency            | Version (verified)                    | Necessity     | Used Command Binary                                                                                                                   |
-|:----------------------|:--------------------------------------|:-------------:|:-------------------------------------------------------------------------------------------------------------------------------------:|
-| GNU bash              | >= 5.3.3(1)                           | necessary     | bash                                                                                                                                  |
-| GNU Awk               | >= 5.3.2                              | necessary     | awk                                                                                                                                   |
-| GNU Coreutils         | >= 9.7.1                              | necessary     | date & dd & dirname & env & echo & false & mkdir & realpath & rm & sed & seq & tail & tee & touch & test & true & unset & wc & whoami |
-| GNU findutils         | >= 4.10.0                             | necessary     | xargs                                                                                                                                 |
-| grep                  | >= 3.12                               | necessary     | grep                                                                                                                                  |
-| openssl               | >= 3.5.3                              | necessary     | openssl                                                                                                                               |
-| sed                   | >= 4.9                                | necessary     | sed                                                                                                                                   |
-| whereis               | >= 2.41.2                             | necessary     | whereis                                                                                                                               |
-| wget                  | >= 1.25.0                             | necessary     | wget                                                                                                                                  |
+| Dependency            | Version (verified)                    | Necessity     | Used Command Binary                                                                                                                              |
+|:----------------------|:--------------------------------------|:-------------:|:------------------------------------------------------------------------------------------------------------------------------------------------:|
+| GNU bash              | >= 5.3.3(1)                           | necessary     | bash                                                                                                                                             |
+| GNU Awk               | >= 5.3.2                              | necessary     | awk                                                                                                                                              |
+| GNU Coreutils         | >= 9.7.1                              | necessary     | basename & date & dd & dirname & env & echo & false & mkdir & realpath & rm & sed & seq & tail & tee & touch & test & true & unset & wc & whoami |
+| GNU findutils         | >= 4.10.0                             | necessary     | xargs                                                                                                                                            |
+| grep                  | >= 3.12                               | necessary     | grep                                                                                                                                             |
+| openssl               | >= 3.5.3                              | necessary     | openssl                                                                                                                                          |
+| sed                   | >= 4.9                                | necessary     | sed                                                                                                                                              |
+| whereis               | >= 2.41.2                             | necessary     | whereis                                                                                                                                          |
+| wget                  | >= 1.25.0                             | necessary     | wget                                                                                                                                             |
 
 ## Setup
 To run this project, you need to clone it to your local computer and run it as a shell script.
@@ -117,9 +117,9 @@ export PKI_SCRIPT_OUTPUT=1
 |                       | PKI_REQ_COMMONNAME                    | necessary     | Common name for the request subject consisting of 2 up to 32 letters, numbers, '@', '.' or ' '.                                       |
 |                       | PKI_REQ_EXTENDED_KEY_USAGE            | optional      | The extended key usage for the request (e.g. critical, serverAuth, clientAuth, codeSigning, emailProtection, OCSPSigning)             |
 |                       | PKI_REQ_KEY_USAGE                     | necessar      | The extended key usage for the request (e.g. critical, serverAuth, clientAuth, codeSigning, emailProtection, OCSPSigning)             |
-| cert_create           | PKI_CERT_OUTPUT_FILE                  | necessary     | Full filepath of the certificate file to write.                                                                                       |
+| cert_create           | PKI_CERT_OUTPUT_FILE                  | optional      | Full filepath of the certificate file to write. If not set it will be automatically based on 'PKI_REQ_INPUT_FILE'.                    |
 |                       | PKI_CERT_DURATION                     | necessary     | The duration of the certificate signing in valid format (1 up to 369 days / 1 up to 59 weeks / 1 up to 12 months / 1 up to 10 years). |
-|                       | PKI_REQ_INPUT_FILE                    | necessary     | Request filepath which needs to be signed.                                                                                            |
+|                       | PKI_REQ_INPUT_FILE                    | necessary     | Request filepath which needs to be signed. Can be an directory containing multiple request files.                                                                                            |
 |                       | PKI_KEY_INPUT_FILE                    | necessary     | Private key filepath.                                                                                                                 |
 |                       | PKI_KEY_INPUT_PASSWORD                | necessary     | Encryption password of the key. Can be plaintext input or a path to an one-line file containing the password.                         |
 |                       | PKI_CA_CONF_FILE                      | necessary     | Full filepath of the configuration file to read.                                                                                      |
@@ -150,11 +150,11 @@ export PKI_SCRIPT_OUTPUT=1
 
 ```
 # Create a self-signed root CA structure
-./pki.sh ca_create "PKI_CA_OUTPUT_PATH=/tmp:::PKI_CA_NAME=caroot:::PKI_CA_ROOT=1:::PKI_CA_BASE_URI=http://pki.test:::PKI_CA_POLICY=1.1.1.1:::PKI_CA_CERT_POLICY=1.1.1.1.2:::PKI_KEY_ALGORITHM=ed25519:::PKI_KEY_INPUT_PASSWORD=Test1234:::PKI_REQ_HASH=sha512:::PKI_REQ_COUNTRY=US:::PKI_REQ_STATE=California:::PKI_REQ_LOCATION=LA:::PKI_REQ_ORGANIZATION=Test:::PKI_REQ_ORGANIZATIONUNIT=TestSub:::PKI_REQ_COMMONNAME=Test Root CA:::PKI_REQ_EXTENDED_KEY_USAGE=critical, serverAuth, clientAuth, OCSPSigning:::PKI_CERT_DURATION=10 years"
+./pki.sh ca_create "PKI_CA_OUTPUT_PATH=/tmp:::PKI_CA_NAME=caroot:::PKI_CA_ROOT=1:::PKI_CA_BASE_URI=http://pki.test:::PKI_CA_POLICY=1.1.1.1:::PKI_CA_CERT_POLICY=1.1.1.1.2:::PKI_KEY_ALGORITHM=ed25519:::PKI_KEY_INPUT_PASSWORD=Test1234:::PKI_REQ_HASH=sha512:::PKI_REQ_COUNTRY=US:::PKI_REQ_STATE=California:::PKI_REQ_LOCATION=LA:::PKI_REQ_ORGANIZATION=Test:::PKI_REQ_ORGANIZATIONUNIT=TestSub:::PKI_REQ_COMMONNAME=Test Root CA:::PKI_REQ_KEY_USAGE=critical, digitalSignature, cRLSign, keyCertSign:::PKI_REQ_EXTENDED_KEY_USAGE=critical, serverAuth, clientAuth, OCSPSigning:::PKI_CERT_DURATION=10 years"
 ```
 ```
 # Create a intermediate structure and request
-./pki.sh ca_create "PKI_CA_OUTPUT_PATH=/tmp:::PKI_CA_NAME=caintermediate:::PKI_CA_ROOT=0:::PKI_CA_BASE_URI=http://pki.test:::PKI_CA_POLICY=1.1.1.2:::PKI_CA_CERT_POLICY=1.1.1.1.3:::PKI_KEY_ALGORITHM=ed25519:::PKI_KEY_INPUT_PASSWORD=Test1234:::PKI_REQ_HASH=sha512:::PKI_REQ_COUNTRY=DE:::PKI_REQ_STATE=Thueringen:::PKI_REQ_LOCATION=Erfurt:::PKI_REQ_ORGANIZATION=Home:::PKI_REQ_ORGANIZATIONUNIT=Home2:::PKI_REQ_COMMONNAME=Test Intermediate CA:::PKI_REQ_KEY_USAGE=critical, digitalSignature, cRLSign, keyCertSign:::PKI_CERT_DURATION=10 years"
+./pki.sh ca_create "PKI_CA_OUTPUT_PATH=/tmp:::PKI_CA_NAME=caintermediate:::PKI_CA_ROOT=0:::PKI_CA_BASE_URI=http://pki.test:::PKI_CA_POLICY=1.1.1.2:::PKI_CA_CERT_POLICY=1.1.1.1.3:::PKI_KEY_ALGORITHM=ed25519:::PKI_KEY_INPUT_PASSWORD=Test1234:::PKI_REQ_HASH=sha512:::PKI_REQ_COUNTRY=US:::PKI_REQ_STATE=California:::PKI_REQ_LOCATION=LA:::PKI_REQ_ORGANIZATION=Test2:::PKI_REQ_ORGANIZATIONUNIT=Home2:::PKI_REQ_COMMONNAME=Test Intermediate CA:::PKI_REQ_KEY_USAGE=critical, digitalSignature, cRLSign, keyCertSign:::PKI_CERT_DURATION=10 years"
 ```
 ```
 # Sign a intermediate CA from root CA
@@ -178,7 +178,7 @@ export PKI_SCRIPT_OUTPUT=1
 ```
 ```
 # Create a CRL
-./pki.sh crl_create "PKI_CRL_OUTPUT_FILE=/tmp/caintermediate/signing/crls/caintermediate.crl:::PKI_KEY_INPUT_FILE=/tmp/caintermediate/.private/caintermediate.key:::PKI_KEY_INPUT_PASSWORD=Test1234:::PKI_CA_CONF_FILE=/tmp/caintermediate/.private/caintermediate.conf:::PKI_CRL_DURATION=7 days"
+./pki.sh crl_create "PKI_CRL_OUTPUT_FILE=/tmp/caintermediate/signing/crls/caintermediate.crl:::PKI_KEY_INPUT_FILE=/tmp/caintermediate/.private/caintermediate.key:::PKI_CERT_INPUT_FILE=/tmp/caintermediate/public/caintermediate.cer:::PKI_KEY_INPUT_PASSWORD=Test1234:::PKI_CA_CONF_FILE=/tmp/caintermediate/.private/caintermediate.conf:::PKI_CRL_DURATION=7 days"
 ```
 ```
 # Buffer CRL to another path
